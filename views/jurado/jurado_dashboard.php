@@ -63,6 +63,7 @@ $usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado
             font-family: 'Montserrat', sans-serif;
             background: linear-gradient(180deg, #fffdf7 0%, #f7f8fc 100%);
             color: var(--panel-text);
+            overflow-x: hidden;
         }
 
         .theme-settings-btn,
@@ -75,6 +76,10 @@ $usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado
 
         .layout {
             min-height: 100vh;
+            display: flex !important;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         .sidebar {
@@ -172,6 +177,10 @@ $usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado
         }
 
         .main {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: calc(100% - var(--sidebar-width));
+            max-width: calc(100% - var(--sidebar-width));
             background:
                 radial-gradient(circle at top left, rgba(228, 168, 0, 0.07), transparent 18%),
                 linear-gradient(180deg, #fffdf7 0%, #f8fafc 100%);
@@ -246,12 +255,17 @@ $usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado
 
         .content {
             padding: 20px;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         .page-shell {
             display: flex;
             flex-direction: column;
             gap: 20px;
+            width: 100%;
+            max-width: 100%;
         }
 
         .panel-card {
@@ -260,6 +274,8 @@ $usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado
             border-radius: 20px;
             box-shadow: var(--panel-shadow);
             padding: 20px 22px;
+            width: 100%;
+            max-width: 100%;
         }
 
         .hero-card h1,
@@ -421,6 +437,11 @@ $usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado
             width: var(--sidebar-collapsed-width);
         }
 
+        body.sidebar-collapsed .main {
+            width: calc(100% - var(--sidebar-collapsed-width));
+            max-width: calc(100% - var(--sidebar-collapsed-width));
+        }
+
         body.sidebar-collapsed .logo-text,
         body.sidebar-collapsed .link-text {
             display: none;
@@ -460,11 +481,16 @@ $usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado
             }
 
             .main {
-                width: 100%;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0;
+                margin-left: 0;
             }
 
             .navbar {
                 padding: 12px 16px;
+                width: 100%;
+                max-width: 100%;
             }
 
             .content {

@@ -72,6 +72,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             font-family: 'Montserrat', sans-serif;
             background: linear-gradient(180deg, #f8fafc 0%, #eff4fb 100%);
             color: var(--admin-text);
+            overflow-x: hidden;
         }
 
         .theme-settings-btn,
@@ -84,6 +85,10 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         .layout {
             min-height: 100vh;
+            display: flex !important;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         .sidebar {
@@ -181,6 +186,10 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .main {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: calc(100% - var(--sidebar-width));
+            max-width: calc(100% - var(--sidebar-width));
             background:
                 radial-gradient(circle at top left, rgba(47, 109, 246, 0.06), transparent 18%),
                 linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
@@ -255,12 +264,17 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         .content {
             padding: 20px;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         .page-shell {
             display: flex;
             flex-direction: column;
             gap: 20px;
+            width: 100%;
+            max-width: 100%;
         }
 
         .panel-card {
@@ -269,6 +283,8 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             border-radius: 20px;
             box-shadow: var(--admin-shadow);
             padding: 20px 22px;
+            width: 100%;
+            max-width: 100%;
         }
 
         .hero-card h1,
@@ -420,7 +436,9 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             margin-top: 18px;
             border: 1px solid var(--admin-border);
             border-radius: 16px;
-            overflow: auto;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
         }
 
         .table {
@@ -478,6 +496,11 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             width: var(--sidebar-collapsed-width);
         }
 
+        body.sidebar-collapsed .main {
+            width: calc(100% - var(--sidebar-collapsed-width));
+            max-width: calc(100% - var(--sidebar-collapsed-width));
+        }
+
         body.sidebar-collapsed .logo-text,
         body.sidebar-collapsed .link-text {
             display: none;
@@ -520,11 +543,16 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             }
 
             .main {
-                width: 100%;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0;
+                margin-left: 0;
             }
 
             .navbar {
                 padding: 12px 16px;
+                width: 100%;
+                max-width: 100%;
             }
 
             .content {
