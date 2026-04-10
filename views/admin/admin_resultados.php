@@ -408,7 +408,25 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                 (grupo.criterios || []).forEach((criterio) => {
                     const clave = criterio.criterio_clave || '';
                     const detalle = competidor.criterios_promedio?.[clave];
-                    row[`Promedio ${criterio.criterio_nombre}`] = detalle ? `${detalle.promedio_otorgado}/${detalle.puntaje_maximo}` : '-';
+                    row[`Promedio ${criterio.criterio_nombre}`] = detalle ? detalle.promedio_otorgado : '';
+                });
+
+                return row;
+            });
+
+            const criteriosPromedioRows = (grupo.competidores_detalle || []).map((competidor) => {
+                const row = {
+                    Puesto: competidor.puesto ?? '',
+                    'N° Competidor': competidor.competidor_numero ?? '',
+                    'Nombre principal': competidor.nombre_mostrar ?? '',
+                    'Promedio final': competidor.promedio_final ?? 0,
+                    'Puntaje final': competidor.puntaje_final ?? 0,
+                };
+
+                (grupo.criterios || []).forEach((criterio) => {
+                    const clave = criterio.criterio_clave || '';
+                    const detalle = competidor.criterios_promedio?.[clave];
+                    row[`Promedio ${criterio.criterio_nombre}`] = detalle ? detalle.promedio_otorgado : '';
                 });
 
                 return row;
@@ -439,7 +457,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                     (grupo.criterios || []).forEach((criterio) => {
                         const clave = criterio.criterio_clave || '';
                         const detalle = detallesIndexados[clave];
-                        row[criterio.criterio_nombre] = detalle ? `${detalle.puntaje_otorgado}/${detalle.puntaje_maximo}` : '-';
+                        row[criterio.criterio_nombre] = detalle ? detalle.puntaje_otorgado : '';
                     });
 
                     detalleRows.push(row);
@@ -459,6 +477,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(resumenRows), 'Resumen');
             XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rankingRows), 'Ranking');
+            XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(criteriosPromedioRows), 'Promedios Criterio');
             XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(detalleRows), 'Evaluaciones');
 
             const fileName = [
