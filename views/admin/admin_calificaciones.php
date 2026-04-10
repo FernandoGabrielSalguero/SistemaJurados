@@ -61,7 +61,7 @@ $formData = $viewData['formData'] ?? ['nombre' => '', 'categoria' => '', 'evento
         .metric-label { color:var(--muted); font-size:.82rem; margin-bottom:6px; }
         .metric-value { font-size:1.8rem; font-weight:800; line-height:1; }
         .metric-help { margin-top:8px; color:var(--muted); font-size:.82rem; }
-        .split-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr); gap:18px; align-items:start; }
+        .form-section { width:100%; }
         .alert-inline { margin-top:14px; padding:14px 16px; border-radius:16px; font-size:.92rem; line-height:1.5; border:1px solid #dbeafe; background:#eff6ff; color:#1d4ed8; }
         .alert-inline.success { background:var(--success-bg); color:var(--success); border-color:#bbf7d0; }
         .alert-inline.danger { background:var(--danger-bg); color:var(--danger); border-color:#fecaca; }
@@ -82,8 +82,6 @@ $formData = $viewData['formData'] ?? ['nombre' => '', 'categoria' => '', 'evento
         .score-summary-value.invalid { color:#fca5a5; }
         .form-actions { margin-top:18px; display:flex; justify-content:flex-end; }
         .btn-primary { border:0; border-radius:14px; background:linear-gradient(135deg,#2f6df6,#4c8bff); color:#fff; padding:12px 18px; font-weight:800; cursor:pointer; }
-        .guide-list { margin:18px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
-        .guide-list strong { display:block; margin-bottom:4px; }
         .table-responsive { margin-top:18px; border:1px solid var(--border); border-radius:16px; overflow-x:auto; }
         .table { width:100%; min-width:940px; border-collapse:collapse; }
         .table thead th { background:#f8fafc; color:#5b6472; border-bottom:1px solid var(--border); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; padding:12px 14px; text-align:left; }
@@ -113,8 +111,9 @@ $formData = $viewData['formData'] ?? ['nombre' => '', 'categoria' => '', 'evento
         body.sidebar-collapsed .main { width:calc(100% - var(--sidebar-collapsed-width)); max-width:calc(100% - var(--sidebar-collapsed-width)); }
         body.sidebar-collapsed .logo-text, body.sidebar-collapsed .link-text { display:none; }
         body.sidebar-collapsed .sidebar-header, body.sidebar-collapsed .sidebar-menu li { justify-content:center; padding-inline:10px; }
-        @media (max-width:1180px) { .metrics-grid,.split-grid,.criterios-grid,.form-grid { grid-template-columns:1fr; } }
-        @media (max-width:860px) { .sidebar { position:fixed; top:0; left:0; bottom:0; transform:translateX(-100%); } body.sidebar-open .sidebar { transform:translateX(0); } .main,body.sidebar-collapsed .main { width:100%; max-width:100%; } .navbar { padding-inline:16px; } .content { padding:16px; } .navbar-actions .navbar-subtitle { display:none; } }
+        @media (max-width:1180px) { .metrics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .criterios-grid,.form-grid { grid-template-columns:1fr; } .table { min-width:820px; } }
+        @media (max-width:860px) { .sidebar { position:fixed; top:0; left:0; bottom:0; transform:translateX(-100%); } body.sidebar-open .sidebar { transform:translateX(0); } .main,body.sidebar-collapsed .main { width:100%; max-width:100%; } .navbar { padding-inline:16px; flex-wrap:wrap; gap:12px; } .navbar-left,.navbar-actions { width:100%; } .navbar-actions { justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; } .metrics-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .form-actions { justify-content:stretch; } .btn-primary { width:100%; } .table { min-width:720px; } .navbar-actions .navbar-subtitle { display:none; } }
+        @media (max-width:560px) { .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .navbar { padding:12px; } .logout-link { padding:8px 12px; } .score-summary-value { font-size:1.6rem; } .table { min-width:640px; } }
     </style>
 </head>
 <body>
@@ -160,8 +159,7 @@ $formData = $viewData['formData'] ?? ['nombre' => '', 'categoria' => '', 'evento
                         <article class="metric-card"><div class="metric-label">Evaluaciones guardadas</div><div class="metric-value"><?= (int) ($metricas['evaluaciones_total'] ?? 0) ?></div><div class="metric-help">Se completara en la vista del jurado.</div></article>
                     </section>
 
-                    <section class="split-grid">
-                        <article class="panel-card">
+                    <section class="panel-card form-section">
                             <h2 class="section-title">Crear formulario de calificacion</h2>
                             <p class="section-caption">El administrador define nombre, categoria, evento y el puntaje maximo de cada criterio. La suma total siempre debe ser 100.</p>
                             <form method="post" id="formularioCalificacion">
@@ -200,18 +198,6 @@ $formData = $viewData['formData'] ?? ['nombre' => '', 'categoria' => '', 'evento
                                 </div>
                                 <div class="form-actions"><button type="submit" class="btn-primary">Guardar formulario</button></div>
                             </form>
-                        </article>
-
-                        <aside class="panel-card">
-                            <h2 class="section-title">Como queda el flujo</h2>
-                            <p class="section-caption">Esta pantalla deja configurada la plantilla base. El siguiente paso sera usarla desde el perfil del jurado.</p>
-                            <ul class="guide-list">
-                                <li><strong>1. Plantilla fija</strong> El formulario siempre tiene los mismos 7 criterios, pero vos definis cuanto pesa cada uno.</li>
-                                <li><strong>2. Seleccion del jurado</strong> El jurado elegira este formulario desde un desplegable en su perfil.</li>
-                                <li><strong>3. Registro completo</strong> Cada voto va a guardar juez, evento, categoria, competidor, detalle por criterio, total y promedio.</li>
-                                <li><strong>4. Ranking futuro</strong> Con esa base despues podremos calcular promedio general, posicion final y resultados en tiempo real.</li>
-                            </ul>
-                        </aside>
                     </section>
 
                     <section class="panel-card">
