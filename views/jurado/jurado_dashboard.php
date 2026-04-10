@@ -1,32 +1,23 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['user_id']) || (string) ($_SESSION['rol'] ?? '') !== 'impulsa_administrador') {
+if (!isset($_SESSION['user_id']) || (string) ($_SESSION['rol'] ?? '') !== 'impulsa_jurado') {
     header('Location: /index.php');
     exit;
 }
 
 require_once __DIR__ . '/../../config.php';
 
-$stmt = $pdo->query(
-    "SELECT
-        COUNT(*) AS total_usuarios,
-        SUM(rol = 'impulsa_administrador') AS total_administradores,
-        SUM(rol = 'impulsa_jurado') AS total_jurados
-     FROM auth"
-);
-$stats = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
-
-$stmtRecientes = $pdo->prepare(
+$stmt = $pdo->prepare(
     "SELECT id, usuario, rol, creado_en
      FROM auth
-     ORDER BY creado_en DESC, id DESC
-     LIMIT 10"
+     WHERE id = :id
+     LIMIT 1"
 );
-$stmtRecientes->execute();
-$recientes = $stmtRecientes->fetchAll(PDO::FETCH_ASSOC);
+$stmt->execute(['id' => (int) $_SESSION['user_id']]);
+$jurado = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-$usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Administrador');
+$usuarioSesion = (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -34,7 +25,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de administración</title>
+    <title>Panel de jurado</title>
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -51,15 +42,15 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         :root {
-            --admin-surface: #ffffff;
-            --admin-bg: #f3f6fb;
-            --admin-border: #e5ebf4;
-            --admin-text: #1f2937;
-            --admin-muted: #67768a;
-            --admin-primary: #2f6df6;
-            --admin-primary-soft: #eaf1ff;
-            --admin-danger: #ef4444;
-            --admin-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+            --panel-surface: #ffffff;
+            --panel-bg: #f6f7fb;
+            --panel-border: #e8ecf4;
+            --panel-text: #1f2937;
+            --panel-muted: #6a7688;
+            --panel-primary: #e4a800;
+            --panel-primary-soft: #fff6d9;
+            --panel-danger: #ef4444;
+            --panel-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
             --sidebar-width: 208px;
             --sidebar-collapsed-width: 72px;
         }
@@ -70,8 +61,8 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         body {
             font-family: 'Montserrat', sans-serif;
-            background: linear-gradient(180deg, #f8fafc 0%, #eff4fb 100%);
-            color: var(--admin-text);
+            background: linear-gradient(180deg, #fffdf7 0%, #f7f8fc 100%);
+            color: var(--panel-text);
         }
 
         .theme-settings-btn,
@@ -89,7 +80,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .sidebar {
             width: var(--sidebar-width);
             background: rgba(255, 255, 255, 0.96);
-            border-right: 1px solid var(--admin-border);
+            border-right: 1px solid var(--panel-border);
             box-shadow: 8px 0 24px rgba(15, 23, 42, 0.04);
             transition: width 0.22s ease, transform 0.22s ease;
             z-index: 40;
@@ -97,7 +88,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         .sidebar-header {
             padding: 18px 16px;
-            border-bottom: 1px solid var(--admin-border);
+            border-bottom: 1px solid var(--panel-border);
             gap: 10px;
             min-height: 76px;
         }
@@ -161,35 +152,35 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .sidebar-menu li .material-icons {
-            color: var(--admin-primary);
+            color: var(--panel-primary);
             font-size: 20px;
         }
 
         .sidebar-menu li.active {
-            background: var(--admin-primary-soft);
-            color: #2151c8;
+            background: var(--panel-primary-soft);
+            color: #b77900;
         }
 
         .sidebar-menu li:not(.active):hover {
-            background: #f8fafc;
+            background: #fffaf0;
             transform: translateX(2px);
         }
 
         .sidebar-footer {
             padding: 12px 10px 14px;
-            border-top: 1px solid var(--admin-border);
+            border-top: 1px solid var(--panel-border);
         }
 
         .main {
             background:
-                radial-gradient(circle at top left, rgba(47, 109, 246, 0.06), transparent 18%),
-                linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+                radial-gradient(circle at top left, rgba(228, 168, 0, 0.07), transparent 18%),
+                linear-gradient(180deg, #fffdf7 0%, #f8fafc 100%);
         }
 
         .navbar {
-            background: rgba(255, 255, 255, 0.86);
+            background: rgba(255, 255, 255, 0.88);
             backdrop-filter: blur(14px);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.92);
+            border-bottom: 1px solid rgba(232, 236, 244, 0.96);
             justify-content: space-between;
             padding: 14px 20px;
             position: sticky;
@@ -211,7 +202,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .navbar-subtitle {
-            color: var(--admin-muted);
+            color: var(--panel-muted);
             font-size: 0.85rem;
             line-height: 1.25;
         }
@@ -229,7 +220,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .btn-icon .material-icons {
-            color: var(--admin-primary);
+            color: var(--panel-primary);
             font-size: 1.35rem;
         }
 
@@ -245,7 +236,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             gap: 7px;
             border-radius: 999px;
             background: #fff;
-            color: var(--admin-danger);
+            color: var(--panel-danger);
             border: 1px solid #fecaca;
             padding: 9px 14px;
             text-decoration: none;
@@ -264,10 +255,10 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .panel-card {
-            background: var(--admin-surface);
-            border: 1px solid var(--admin-border);
+            background: var(--panel-surface);
+            border: 1px solid var(--panel-border);
             border-radius: 20px;
-            box-shadow: var(--admin-shadow);
+            box-shadow: var(--panel-shadow);
             padding: 20px 22px;
         }
 
@@ -285,7 +276,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .metric-copy,
         .table-note {
             margin: 0;
-            color: var(--admin-muted);
+            color: var(--panel-muted);
             line-height: 1.5;
             font-size: 0.92rem;
         }
@@ -310,33 +301,33 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .primary-chip {
-            background: linear-gradient(135deg, #2f6df6, #4391ff);
-            color: #fff;
-            box-shadow: 0 10px 20px rgba(47, 109, 246, 0.18);
+            background: linear-gradient(135deg, #e4a800, #f3c23d);
+            color: #3a2b00;
+            box-shadow: 0 10px 20px rgba(228, 168, 0, 0.18);
         }
 
         .secondary-chip {
             background: #fff;
-            color: #23408f;
-            border: 1px solid #d8e4ff;
+            color: #9a6c00;
+            border: 1px solid #f5dd96;
         }
 
-        .metrics-grid {
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 16px;
             margin-top: 18px;
         }
 
-        .metric-card {
-            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-            border: 1px solid var(--admin-border);
+        .stat-card {
+            background: linear-gradient(180deg, #ffffff 0%, #fffef8 100%);
+            border: 1px solid var(--panel-border);
             border-radius: 18px;
             padding: 18px;
             box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
         }
 
-        .metric-head {
+        .stat-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -344,36 +335,36 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             margin-bottom: 14px;
         }
 
-        .metric-icon {
+        .stat-icon {
             width: 38px;
             height: 38px;
             border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: var(--admin-primary-soft);
-            color: var(--admin-primary);
+            background: var(--panel-primary-soft);
+            color: #b77900;
             font-size: 1.2rem;
             flex-shrink: 0;
         }
 
-        .metric-label {
-            color: var(--admin-muted);
+        .stat-label {
+            color: var(--panel-muted);
             font-size: 0.88rem;
             margin-bottom: 4px;
         }
 
-        .metric-value {
-            font-size: 1.8rem;
-            line-height: 1;
+        .stat-value {
+            font-size: 1.2rem;
+            line-height: 1.25;
             font-weight: 800;
             color: #202633;
-            margin-bottom: 8px;
+            word-break: break-word;
         }
 
         .split-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+            grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
             gap: 16px;
         }
 
@@ -390,7 +381,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             gap: 12px;
             padding: 14px;
             border-radius: 16px;
-            border: 1px solid var(--admin-border);
+            border: 1px solid var(--panel-border);
             background: #fff;
         }
 
@@ -398,8 +389,8 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             width: 34px;
             height: 34px;
             border-radius: 11px;
-            background: var(--admin-primary-soft);
-            color: var(--admin-primary);
+            background: var(--panel-primary-soft);
+            color: #b77900;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -408,70 +399,22 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             font-size: 0.95rem;
         }
 
-        .mini-item strong,
-        .table-title {
+        .mini-item strong {
             display: block;
             margin-bottom: 4px;
             color: #202633;
             font-size: 0.94rem;
         }
 
-        .table-responsive {
+        .info-strip {
             margin-top: 18px;
-            border: 1px solid var(--admin-border);
             border-radius: 16px;
-            overflow: auto;
-        }
-
-        .table {
-            margin-bottom: 0;
-            min-width: 560px;
-        }
-
-        .table thead th {
-            background: #f8fafc;
-            color: #5b6472;
-            border-bottom-color: var(--admin-border);
-            font-size: 0.74rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            padding: 12px 14px;
-        }
-
-        .table tbody td {
-            padding: 12px 14px;
+            border: 1px solid #f6e4a6;
+            background: #fffdf4;
+            padding: 15px 16px;
+            color: #7c5a00;
             font-size: 0.9rem;
-            vertical-align: top;
-        }
-
-        .table tbody tr:last-child td {
-            border-bottom: 0;
-        }
-
-        .role-pill {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            padding: 6px 11px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .role-pill.role-admin {
-            background: #eaf1ff;
-            color: #2457cc;
-        }
-
-        .role-pill.role-jurado {
-            background: #fff4d8;
-            color: #a16207;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: var(--admin-muted);
-            padding: 28px 16px;
+            line-height: 1.5;
         }
 
         body.sidebar-collapsed .sidebar {
@@ -498,10 +441,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         @media (max-width: 1180px) {
-            .metrics-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
+            .stats-grid,
             .split-grid {
                 grid-template-columns: 1fr;
             }
@@ -536,7 +476,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                 border-radius: 18px;
             }
 
-            .metrics-grid {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -581,25 +521,25 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
             <nav class="sidebar-menu">
                 <ul>
-                    <li class="active" onclick="location.href='admin_dashboard.php'">
+                    <li class="active" onclick="location.href='jurado_dashboard.php'">
                         <span class="material-icons">home</span>
                         <span class="link-text">Inicio</span>
                     </li>
                     <li>
-                        <span class="material-icons">dashboard</span>
-                        <span class="link-text">Panel</span>
+                        <span class="material-icons">gavel</span>
+                        <span class="link-text">Evaluación</span>
                     </li>
                     <li>
-                        <span class="material-icons">badge</span>
-                        <span class="link-text">Administradores</span>
+                        <span class="material-icons">fact_check</span>
+                        <span class="link-text">Criterios</span>
                     </li>
                     <li>
-                        <span class="material-icons">groups</span>
-                        <span class="link-text">Jurados</span>
+                        <span class="material-icons">inventory_2</span>
+                        <span class="link-text">Postulaciones</span>
                     </li>
                     <li>
-                        <span class="material-icons">table_chart</span>
-                        <span class="link-text">Registros</span>
+                        <span class="material-icons">assignment_turned_in</span>
+                        <span class="link-text">Resultados</span>
                     </li>
                     <li onclick="location.href='../../logout.php'">
                         <span class="material-icons">logout</span>
@@ -623,7 +563,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                     </button>
                     <div>
                         <div class="navbar-title">Inicio</div>
-                        <div class="navbar-subtitle">Panel de administración</div>
+                        <div class="navbar-subtitle">Panel de jurado</div>
                     </div>
                 </div>
 
@@ -639,129 +579,101 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             <section class="content">
                 <div class="page-shell">
                     <div class="panel-card hero-card">
-                        <h1>¡Qué gusto verte!</h1>
-                        <p>Estás viendo el panel interno de administración de Impulsa. Esta vista quedó organizada con menú lateral, métricas y una tabla central para revisar los accesos guardados en la tabla <code>auth</code>.</p>
+                        <h1>Bienvenido al panel de jurado</h1>
+                        <p>Ingresaste con un código de acceso válido. Esta pantalla mantiene la misma estructura visual del panel admin para que toda la experiencia del sistema sea consistente.</p>
                         <div class="hero-actions">
-                            <a href="#resumen" class="primary-chip">
-                                <span class="material-icons">play_arrow</span>
-                                <span>Ver resumen</span>
+                            <a href="#datos" class="primary-chip">
+                                <span class="material-icons">visibility</span>
+                                <span>Ver datos</span>
                             </a>
-                            <a href="#registros" class="secondary-chip">
-                                <span class="material-icons">table_rows</span>
-                                <span>Ir a registros</span>
+                            <a href="#acceso" class="secondary-chip">
+                                <span class="material-icons">vpn_key</span>
+                                <span>Ver acceso</span>
                             </a>
                         </div>
                     </div>
 
-                    <div class="panel-card" id="resumen">
-                        <h2 class="section-title">Resumen general</h2>
-                        <p class="section-caption">Indicadores rápidos del sistema de acceso para administradores y jurados.</p>
+                    <div class="panel-card" id="datos">
+                        <h2 class="section-title">Datos de la sesión</h2>
+                        <p class="section-caption">Información básica del usuario autenticado con rol <code>impulsa_jurado</code>.</p>
 
-                        <div class="metrics-grid">
-                            <article class="metric-card">
-                                <div class="metric-head">
+                        <div class="stats-grid">
+                            <article class="stat-card">
+                                <div class="stat-head">
                                     <div>
-                                        <div class="metric-label">Usuarios en auth</div>
-                                        <div class="metric-value"><?= (int) ($stats['total_usuarios'] ?? 0) ?></div>
+                                        <div class="stat-label">ID</div>
+                                        <div class="stat-value"><?= (int) ($jurado['id'] ?? 0) ?></div>
                                     </div>
-                                    <span class="metric-icon material-icons">group</span>
+                                    <span class="stat-icon material-icons">badge</span>
                                 </div>
-                                <p class="metric-copy">Total de credenciales cargadas en la tabla principal de acceso.</p>
+                                <p class="metric-copy">Identificador interno del registro guardado en la tabla <code>auth</code>.</p>
                             </article>
 
-                            <article class="metric-card">
-                                <div class="metric-head">
+                            <article class="stat-card">
+                                <div class="stat-head">
                                     <div>
-                                        <div class="metric-label">Administradores</div>
-                                        <div class="metric-value"><?= (int) ($stats['total_administradores'] ?? 0) ?></div>
+                                        <div class="stat-label">Usuario</div>
+                                        <div class="stat-value"><?= htmlspecialchars($usuarioSesion, ENT_QUOTES, 'UTF-8') ?></div>
                                     </div>
-                                    <span class="metric-icon material-icons">admin_panel_settings</span>
+                                    <span class="stat-icon material-icons">person</span>
                                 </div>
-                                <p class="metric-copy">Usuarios que ingresan con combinación de usuario y contraseña.</p>
+                                <p class="metric-copy">Nombre de usuario asociado al código de acceso que validó el ingreso.</p>
                             </article>
 
-                            <article class="metric-card">
-                                <div class="metric-head">
+                            <article class="stat-card">
+                                <div class="stat-head">
                                     <div>
-                                        <div class="metric-label">Jurados</div>
-                                        <div class="metric-value"><?= (int) ($stats['total_jurados'] ?? 0) ?></div>
+                                        <div class="stat-label">Rol</div>
+                                        <div class="stat-value"><?= htmlspecialchars((string) ($_SESSION['rol'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                                     </div>
-                                    <span class="metric-icon material-icons">verified_user</span>
+                                    <span class="stat-icon material-icons">verified_user</span>
                                 </div>
-                                <p class="metric-copy">Usuarios habilitados para entrar con código de acceso válido.</p>
+                                <p class="metric-copy">Perfil habilitado para revisar evaluaciones y operar como jurado.</p>
                             </article>
                         </div>
                     </div>
 
                     <div class="split-grid">
-                        <div class="panel-card" id="registros">
-                            <h2 class="section-title">Últimos accesos cargados</h2>
-                            <p class="table-note">Listado de registros disponibles en <code>auth</code>, ordenados por fecha de creación.</p>
+                        <div class="panel-card" id="acceso">
+                            <h2 class="section-title">Acceso validado</h2>
+                            <p class="section-caption">Este ingreso no depende de usuario y contraseña, sino de la coincidencia con un <code>codigo_acceso</code> válido almacenado en la base.</p>
 
-                            <div class="table-responsive">
-                                <table class="table align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Usuario</th>
-                                            <th>Rol</th>
-                                            <th>Creado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php if ($recientes): ?>
-                                            <?php foreach ($recientes as $registro): ?>
-                                                <?php $esAdmin = (string) $registro['rol'] === 'impulsa_administrador'; ?>
-                                                <tr>
-                                                    <td><?= (int) $registro['id'] ?></td>
-                                                    <td>
-                                                        <strong class="table-title"><?= htmlspecialchars((string) $registro['usuario'], ENT_QUOTES, 'UTF-8') ?></strong>
-                                                        <span class="table-note">Credencial activa para ingreso</span>
-                                                    </td>
-                                                    <td>
-                                                        <span class="role-pill <?= $esAdmin ? 'role-admin' : 'role-jurado' ?>">
-                                                            <?= htmlspecialchars((string) $registro['rol'], ENT_QUOTES, 'UTF-8') ?>
-                                                        </span>
-                                                    </td>
-                                                    <td><?= htmlspecialchars((string) ($registro['creado_en'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td colspan="4" class="empty-state">No hay registros disponibles en <code>auth</code>.</td>
-                                            </tr>
-                                        <?php endif; ?>
-                                    </tbody>
-                                </table>
+                            <div class="info-strip">
+                                El sistema compara el código ingresado contra los hashes guardados en la tabla <code>auth</code>. Si encuentra una coincidencia para el rol <code>impulsa_jurado</code>, se genera la sesión y se habilita el acceso a este panel.
+                            </div>
+
+                            <div class="info-strip">
+                                Fecha de creación del registro:
+                                <strong><?= htmlspecialchars((string) ($jurado['creado_en'] ?? 'Sin fecha disponible'), ENT_QUOTES, 'UTF-8') ?></strong>
                             </div>
                         </div>
 
                         <aside class="panel-card">
                             <h2 class="section-title">Cómo navegar</h2>
-                            <p class="section-caption">El menú lateral quedó fijo en un único estilo visual y adaptado a pantallas chicas.</p>
+                            <p class="section-caption">La estructura, la tipografía y la escala están alineadas con el dashboard de administración.</p>
 
                             <div class="mini-list">
                                 <div class="mini-item">
                                     <span class="mini-badge">1</span>
                                     <div>
                                         <strong>Inicio</strong>
-                                        <span class="table-note">Acceso rápido al resumen del dashboard.</span>
+                                        <span class="table-note">Resumen rápido del estado actual de tu sesión.</span>
                                     </div>
                                 </div>
 
                                 <div class="mini-item">
                                     <span class="mini-badge">2</span>
                                     <div>
-                                        <strong>Panel</strong>
-                                        <span class="table-note">Espacio disponible para sumar nuevos módulos.</span>
+                                        <strong>Evaluación</strong>
+                                        <span class="table-note">Espacio previsto para sumar formularios o rúbricas de análisis.</span>
                                     </div>
                                 </div>
 
                                 <div class="mini-item">
                                     <span class="mini-badge">3</span>
                                     <div>
-                                        <strong>Registros</strong>
-                                        <span class="table-note">Zona para controlar administradores y jurados creados.</span>
+                                        <strong>Resultados</strong>
+                                        <span class="table-note">Zona disponible para mostrar dictámenes o estados finales.</span>
                                     </div>
                                 </div>
                             </div>
@@ -833,7 +745,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             const root = document.documentElement;
             root.dataset.theme = 'light';
             root.dataset.themeMode = 'light';
-            root.dataset.themeAccent = 'indigo';
+            root.dataset.themeAccent = 'amber';
             root.dataset.themeSurface = 'solid';
             root.classList.add('theme-ready');
 
