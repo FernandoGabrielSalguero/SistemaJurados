@@ -75,11 +75,39 @@ $tieneTablaInformacionUsuarios = tablaExiste($pdo, 'informacion_usuarios');
 $mensaje = '';
 $mensajeTipo = 'success';
 $mostrarModalJurado = false;
+$modoModalJurado = 'crear';
+$juradoEditarId = 0;
 $nombreNuevoJurado = '';
 $codigoNuevoJurado = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_jurado'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_jurado_id'])) {
+    $juradoIdEliminar = (int) $_POST['eliminar_jurado_id'];
+
+    try {
+        $stmtEliminar = $pdo->prepare(
+            "DELETE FROM auth
+             WHERE id = :id
+               AND rol = 'impulsa_jurado'"
+        );
+        $stmtEliminar->execute(['id' => $juradoIdEliminar]);
+
+        if ($stmtEliminar->rowCount() > 0) {
+            $mensaje = 'Jurado eliminado correctamente.';
+            $mensajeTipo = 'success';
+        } else {
+            $mensaje = 'No se encontró el jurado a eliminar.';
+            $mensajeTipo = 'danger';
+        }
+    } catch (Throwable $e) {
+        $mensaje = 'No se pudo eliminar el jurado.';
+        $mensajeTipo = 'danger';
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_jurado'])) {
     $mostrarModalJurado = true;
+    $modoModalJurado = (string) ($_POST['modo_jurado'] ?? 'crear') === 'editar' ? 'editar' : 'crear';
+    $juradoEditarId = (int) ($_POST['jurado_id'] ?? 0);
     $nombreNuevoJurado = trim((string) ($_POST['nombre_jurado'] ?? ''));
     $codigoNuevoJurado = trim((string) ($_POST['codigo_acceso_jurado'] ?? ''));
 
@@ -93,62 +121,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_jurado'])) {
         try {
             $pdo->beginTransaction();
 
-            $usuarioGenerado = generarUsuarioUnico($pdo, $nombreNuevoJurado);
-            $passwordDummy = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
-            $codigoHash = password_hash($codigoNuevoJurado, PASSWORD_DEFAULT);
+            if ($modoModalJurado === 'editar' && $juradoEditarId > 0) {
+                $codigoHash = password_hash($codigoNuevoJurado, PASSWORD_DEFAULT);
 
-            $columnasAuth = ['usuario', 'contrasena', 'codigo_acceso', 'rol'];
-            $placeholdersAuth = [':usuario', ':contrasena', ':codigo_acceso', ':rol'];
-            $paramsAuth = [
-                'usuario' => $usuarioGenerado,
-                'contrasena' => $passwordDummy,
-                'codigo_acceso' => $codigoHash,
-                'rol' => 'impulsa_jurado',
-            ];
+                $setAuth = ['codigo_acceso = :codigo_acceso'];
+                $paramsAuth = [
+                    'codigo_acceso' => $codigoHash,
+                    'id' => $juradoEditarId,
+                ];
 
-            if ($tieneCodigoVisible) {
-                $columnasAuth[] = 'codigo_acceso_visible';
-                $placeholdersAuth[] = ':codigo_acceso_visible';
-                $paramsAuth['codigo_acceso_visible'] = $codigoNuevoJurado;
+                if ($tieneCodigoVisible) {
+                    $setAuth[] = 'codigo_acceso_visible = :codigo_acceso_visible';
+                    $paramsAuth['codigo_acceso_visible'] = $codigoNuevoJurado;
+                }
+
+                $stmtUpdateAuth = $pdo->prepare(
+                    "UPDATE auth
+                     SET " . implode(', ', $setAuth) . "
+                     WHERE id = :id
+                       AND rol = 'impulsa_jurado'"
+                );
+                $stmtUpdateAuth->execute($paramsAuth);
+
+                $stmtUpdateInfo = $pdo->prepare(
+                    "UPDATE informacion_usuarios
+                     SET nombre = :nombre
+                     WHERE user_auth_id = :user_auth_id"
+                );
+                $stmtUpdateInfo->execute([
+                    'nombre' => $nombreNuevoJurado,
+                    'user_auth_id' => $juradoEditarId,
+                ]);
+
+                if ($stmtUpdateInfo->rowCount() === 0) {
+                    $stmtInsertInfo = $pdo->prepare(
+                        'INSERT INTO informacion_usuarios (user_auth_id, nombre)
+                         VALUES (:user_auth_id, :nombre)'
+                    );
+                    $stmtInsertInfo->execute([
+                        'user_auth_id' => $juradoEditarId,
+                        'nombre' => $nombreNuevoJurado,
+                    ]);
+                }
+            } else {
+                $usuarioGenerado = generarUsuarioUnico($pdo, $nombreNuevoJurado);
+                $passwordDummy = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
+                $codigoHash = password_hash($codigoNuevoJurado, PASSWORD_DEFAULT);
+
+                $columnasAuth = ['usuario', 'contrasena', 'codigo_acceso', 'rol'];
+                $placeholdersAuth = [':usuario', ':contrasena', ':codigo_acceso', ':rol'];
+                $paramsAuth = [
+                    'usuario' => $usuarioGenerado,
+                    'contrasena' => $passwordDummy,
+                    'codigo_acceso' => $codigoHash,
+                    'rol' => 'impulsa_jurado',
+                ];
+
+                if ($tieneCodigoVisible) {
+                    $columnasAuth[] = 'codigo_acceso_visible';
+                    $placeholdersAuth[] = ':codigo_acceso_visible';
+                    $paramsAuth['codigo_acceso_visible'] = $codigoNuevoJurado;
+                }
+
+                if ($tieneAccesoHabilitado) {
+                    $columnasAuth[] = 'acceso_habilitado';
+                    $placeholdersAuth[] = ':acceso_habilitado';
+                    $paramsAuth['acceso_habilitado'] = 1;
+                }
+
+                $sqlInsertAuth = sprintf(
+                    'INSERT INTO auth (%s) VALUES (%s)',
+                    implode(', ', $columnasAuth),
+                    implode(', ', $placeholdersAuth)
+                );
+
+                $stmtInsertAuth = $pdo->prepare($sqlInsertAuth);
+                $stmtInsertAuth->execute($paramsAuth);
+
+                $nuevoUserId = (int) $pdo->lastInsertId();
+
+                $stmtInsertInfo = $pdo->prepare(
+                    'INSERT INTO informacion_usuarios (user_auth_id, nombre)
+                     VALUES (:user_auth_id, :nombre)'
+                );
+                $stmtInsertInfo->execute([
+                    'user_auth_id' => $nuevoUserId,
+                    'nombre' => $nombreNuevoJurado,
+                ]);
             }
-
-            if ($tieneAccesoHabilitado) {
-                $columnasAuth[] = 'acceso_habilitado';
-                $placeholdersAuth[] = ':acceso_habilitado';
-                $paramsAuth['acceso_habilitado'] = 1;
-            }
-
-            $sqlInsertAuth = sprintf(
-                'INSERT INTO auth (%s) VALUES (%s)',
-                implode(', ', $columnasAuth),
-                implode(', ', $placeholdersAuth)
-            );
-
-            $stmtInsertAuth = $pdo->prepare($sqlInsertAuth);
-            $stmtInsertAuth->execute($paramsAuth);
-
-            $nuevoUserId = (int) $pdo->lastInsertId();
-
-            $stmtInsertInfo = $pdo->prepare(
-                'INSERT INTO informacion_usuarios (user_auth_id, nombre)
-                 VALUES (:user_auth_id, :nombre)'
-            );
-            $stmtInsertInfo->execute([
-                'user_auth_id' => $nuevoUserId,
-                'nombre' => $nombreNuevoJurado,
-            ]);
 
             $pdo->commit();
-            $mensaje = 'Jurado creado correctamente.';
+            $mensaje = $modoModalJurado === 'editar'
+                ? 'Jurado modificado correctamente.'
+                : 'Jurado creado correctamente.';
             $mensajeTipo = 'success';
             $mostrarModalJurado = false;
+            $modoModalJurado = 'crear';
+            $juradoEditarId = 0;
             $nombreNuevoJurado = '';
             $codigoNuevoJurado = '';
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $mensaje = 'No se pudo crear el jurado.';
+            $mensaje = $modoModalJurado === 'editar'
+                ? 'No se pudo modificar el jurado.'
+                : 'No se pudo crear el jurado.';
             $mensajeTipo = 'danger';
         }
     }
@@ -558,6 +636,11 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             margin: 0;
         }
 
+        .inline-form {
+            display: inline;
+            margin: 0;
+        }
+
         .switch-field {
             display: inline-flex;
             align-items: center;
@@ -614,6 +697,46 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         .switch-state.disabled {
             color: var(--admin-warning);
+        }
+
+        .actions-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 34px;
+            border-radius: 10px;
+            padding: 7px 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid transparent;
+            text-decoration: none;
+        }
+
+        .action-btn.modify {
+            background: #eff6ff;
+            border-color: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .action-btn.delete {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .action-btn.disabled {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
         }
 
         .jurado-list {
@@ -1004,6 +1127,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                             <th>Rol</th>
                                             <th>Creado</th>
                                             <th>Acceso</th>
+                                            <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1012,6 +1136,17 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                                 <?php
                                                 $esAdmin = (string) $usuario['rol'] === 'impulsa_administrador';
                                                 $accesoHabilitado = $tieneAccesoHabilitado ? (int) ($usuario['acceso_habilitado'] ?? 1) === 1 : true;
+                                                $nombreJuradoTabla = $usuario['usuario'];
+                                                $codigoVisibleTabla = '';
+                                                if (!$esAdmin) {
+                                                    foreach ($jurados as $juradoListado) {
+                                                        if ((int) $juradoListado['id'] === (int) $usuario['id']) {
+                                                            $nombreJuradoTabla = (string) ($juradoListado['nombre'] ?? $juradoListado['usuario']);
+                                                            $codigoVisibleTabla = (string) ($juradoListado['codigo_acceso_visible'] ?? '');
+                                                            break;
+                                                        }
+                                                    }
+                                                }
                                                 ?>
                                                 <tr>
                                                     <td><?= (int) $usuario['id'] ?></td>
@@ -1041,11 +1176,37 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                                             </div>
                                                         </form>
                                                     </td>
+                                                    <td>
+                                                        <?php if (!$esAdmin): ?>
+                                                            <div class="actions-cell">
+                                                                <button
+                                                                    type="button"
+                                                                    class="action-btn modify"
+                                                                    data-jurado-edit="1"
+                                                                    data-jurado-id="<?= (int) $usuario['id'] ?>"
+                                                                    data-jurado-nombre="<?= htmlspecialchars($nombreJuradoTabla, ENT_QUOTES, 'UTF-8') ?>"
+                                                                    data-jurado-codigo="<?= htmlspecialchars($codigoVisibleTabla, ENT_QUOTES, 'UTF-8') ?>">
+                                                                    <span class="material-icons">edit</span>
+                                                                    <span>Modificar</span>
+                                                                </button>
+
+                                                                <form method="post" class="inline-form" onsubmit="return confirm('¿Querés eliminar este jurado?');">
+                                                                    <input type="hidden" name="eliminar_jurado_id" value="<?= (int) $usuario['id'] ?>">
+                                                                    <button type="submit" class="action-btn delete">
+                                                                        <span class="material-icons">delete</span>
+                                                                        <span>Eliminar</span>
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        <?php else: ?>
+                                                            <span class="action-btn disabled">Sin acciones</span>
+                                                        <?php endif; ?>
+                                                    </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
                                             <tr>
-                                                <td colspan="5" class="text-center py-4 text-secondary">No hay usuarios registrados todavía.</td>
+                                                <td colspan="6" class="text-center py-4 text-secondary">No hay usuarios registrados todavía.</td>
                                             </tr>
                                         <?php endif; ?>
                                     </tbody>
@@ -1105,8 +1266,13 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="juradoModalTitle">
             <div class="modal-header">
                 <div>
-                    <h3 class="modal-title" id="juradoModalTitle">Añadir jurado</h3>
-                    <p class="modal-copy">Completá el nombre y el código de acceso. El usuario se genera automáticamente.</p>
+                    <h3 class="modal-title" id="juradoModalTitle"><?= $modoModalJurado === 'editar' ? 'Modificar jurado' : 'Añadir jurado' ?></h3>
+                    <p class="modal-copy">
+                        <?= $modoModalJurado === 'editar'
+                            ? 'Actualizá el nombre y el código de acceso del jurado seleccionado.'
+                            : 'Completá el nombre y el código de acceso. El usuario se genera automáticamente.'
+                        ?>
+                    </p>
                 </div>
                 <button type="button" class="modal-close" id="closeJuradoModalBtn" aria-label="Cerrar modal">
                     <span class="material-icons">close</span>
@@ -1114,7 +1280,9 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             </div>
 
             <form method="post">
-                <input type="hidden" name="crear_jurado" value="1">
+                <input type="hidden" name="guardar_jurado" value="1">
+                <input type="hidden" name="modo_jurado" id="modo_jurado" value="<?= htmlspecialchars($modoModalJurado, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="jurado_id" id="jurado_id" value="<?= (int) $juradoEditarId ?>">
                 <div class="form-stack">
                     <div class="form-field">
                         <label for="nombre_jurado">Nombre</label>
@@ -1141,7 +1309,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary-modal" id="cancelJuradoModalBtn">Cancelar</button>
-                    <button type="submit" class="btn-primary-modal">Guardar jurado</button>
+                    <button type="submit" class="btn-primary-modal"><?= $modoModalJurado === 'editar' ? 'Guardar cambios' : 'Guardar jurado' ?></button>
                 </div>
             </form>
         </div>
@@ -1158,6 +1326,14 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         const openJuradoModalBtn = document.getElementById('openJuradoModalBtn');
         const closeJuradoModalBtn = document.getElementById('closeJuradoModalBtn');
         const cancelJuradoModalBtn = document.getElementById('cancelJuradoModalBtn');
+        const juradoEditButtons = document.querySelectorAll('[data-jurado-edit]');
+        const juradoModalTitle = document.getElementById('juradoModalTitle');
+        const modoJuradoInput = document.getElementById('modo_jurado');
+        const juradoIdInput = document.getElementById('jurado_id');
+        const nombreJuradoInput = document.getElementById('nombre_jurado');
+        const codigoJuradoInput = document.getElementById('codigo_acceso_jurado');
+        const juradoSubmitButton = document.querySelector('.btn-primary-modal');
+        const juradoModalCopy = document.querySelector('.modal-copy');
 
         function openJuradoModal() {
             juradoModal?.removeAttribute('hidden');
@@ -1165,6 +1341,29 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         function closeJuradoModal() {
             juradoModal?.setAttribute('hidden', 'hidden');
+        }
+
+        function resetJuradoModalToCreate() {
+            if (modoJuradoInput) modoJuradoInput.value = 'crear';
+            if (juradoIdInput) juradoIdInput.value = '0';
+            if (juradoModalTitle) juradoModalTitle.textContent = 'Añadir jurado';
+            if (juradoModalCopy) {
+                juradoModalCopy.textContent = 'Completá el nombre y el código de acceso. El usuario se genera automáticamente.';
+            }
+            if (juradoSubmitButton) juradoSubmitButton.textContent = 'Guardar jurado';
+        }
+
+        function prepareEditJuradoModal(button) {
+            if (modoJuradoInput) modoJuradoInput.value = 'editar';
+            if (juradoIdInput) juradoIdInput.value = button.dataset.juradoId || '0';
+            if (nombreJuradoInput) nombreJuradoInput.value = button.dataset.juradoNombre || '';
+            if (codigoJuradoInput) codigoJuradoInput.value = button.dataset.juradoCodigo || '';
+            if (juradoModalTitle) juradoModalTitle.textContent = 'Modificar jurado';
+            if (juradoModalCopy) {
+                juradoModalCopy.textContent = 'Actualizá el nombre y el código de acceso del jurado seleccionado.';
+            }
+            if (juradoSubmitButton) juradoSubmitButton.textContent = 'Guardar cambios';
+            openJuradoModal();
         }
 
         function syncSidebarState() {
@@ -1216,9 +1415,17 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             syncSidebarState();
         });
 
-        openJuradoModalBtn?.addEventListener('click', openJuradoModal);
+        openJuradoModalBtn?.addEventListener('click', () => {
+            resetJuradoModalToCreate();
+            if (nombreJuradoInput) nombreJuradoInput.value = '';
+            if (codigoJuradoInput) codigoJuradoInput.value = '';
+            openJuradoModal();
+        });
         closeJuradoModalBtn?.addEventListener('click', closeJuradoModal);
         cancelJuradoModalBtn?.addEventListener('click', closeJuradoModal);
+        juradoEditButtons.forEach((button) => {
+            button.addEventListener('click', () => prepareEditJuradoModal(button));
+        });
 
         juradoModal?.addEventListener('click', (event) => {
             if (event.target === juradoModal) {
