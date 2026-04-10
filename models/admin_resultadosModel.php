@@ -196,7 +196,9 @@ class AdminResultadosModel
                     'nombres' => [],
                     'evaluaciones' => [],
                     'puntaje_acumulado' => 0.0,
+                    'promedio_acumulado' => 0.0,
                     'total_evaluaciones' => 0,
+                    'criterios_promedio' => [],
                 ];
             }
 
@@ -207,6 +209,7 @@ class AdminResultadosModel
 
             $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['evaluaciones'][] = $evaluacion;
             $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['puntaje_acumulado'] += (float) ($evaluacion['puntaje_total'] ?? 0);
+            $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['promedio_acumulado'] += (float) ($evaluacion['promedio'] ?? 0);
             $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['total_evaluaciones']++;
 
             foreach ($evaluacion['detalles'] as $detalle) {
@@ -221,6 +224,19 @@ class AdminResultadosModel
                         'criterio_nombre' => (string) ($detalle['criterio_nombre'] ?? ''),
                     ];
                 }
+
+                if (!isset($agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['criterios_promedio'][$criterioClave])) {
+                    $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['criterios_promedio'][$criterioClave] = [
+                        'criterio_clave' => $criterioClave,
+                        'criterio_nombre' => (string) ($detalle['criterio_nombre'] ?? ''),
+                        'puntaje_maximo' => (float) ($detalle['puntaje_maximo'] ?? 0),
+                        'puntaje_otorgado_acumulado' => 0.0,
+                        'cantidad' => 0,
+                    ];
+                }
+
+                $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['criterios_promedio'][$criterioClave]['puntaje_otorgado_acumulado'] += (float) ($detalle['puntaje_otorgado'] ?? 0);
+                $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['criterios_promedio'][$criterioClave]['cantidad']++;
             }
         }
 
@@ -233,19 +249,22 @@ class AdminResultadosModel
                 : 0.0;
 
             $competidoresOrdenados = array_values($grupo['competidores_detalle']);
-            usort(
-                $competidoresOrdenados,
-                static function (array $a, array $b): int {
-                    return strnatcasecmp((string) $a['competidor_numero'], (string) $b['competidor_numero']);
-                }
-            );
-
             foreach ($competidoresOrdenados as &$competidor) {
                 $competidor['nombres'] = array_keys($competidor['nombres']);
                 $competidor['nombre_mostrar'] = $competidor['nombres'][0] ?? 'Sin nombre';
-                $competidor['promedio_general'] = $competidor['total_evaluaciones'] > 0
+                $competidor['puntaje_final'] = $competidor['total_evaluaciones'] > 0
                     ? round($competidor['puntaje_acumulado'] / $competidor['total_evaluaciones'], 2)
                     : 0.0;
+                $competidor['promedio_final'] = $competidor['total_evaluaciones'] > 0
+                    ? round($competidor['promedio_acumulado'] / $competidor['total_evaluaciones'], 2)
+                    : 0.0;
+
+                foreach ($competidor['criterios_promedio'] as &$criterioPromedio) {
+                    $criterioPromedio['promedio_otorgado'] = $criterioPromedio['cantidad'] > 0
+                        ? round($criterioPromedio['puntaje_otorgado_acumulado'] / $criterioPromedio['cantidad'], 2)
+                        : 0.0;
+                }
+                unset($criterioPromedio);
 
                 usort(
                     $competidor['evaluaciones'],
@@ -253,6 +272,35 @@ class AdminResultadosModel
                         return strcmp((string) ($a['creado_en'] ?? ''), (string) ($b['creado_en'] ?? ''));
                     }
                 );
+            }
+            unset($competidor);
+
+            usort(
+                $competidoresOrdenados,
+                static function (array $a, array $b): int {
+                    $comparacionPromedio = (float) ($b['promedio_final'] ?? 0) <=> (float) ($a['promedio_final'] ?? 0);
+                    if ($comparacionPromedio !== 0) {
+                        return $comparacionPromedio;
+                    }
+
+                    $comparacionPuntaje = (float) ($b['puntaje_final'] ?? 0) <=> (float) ($a['puntaje_final'] ?? 0);
+                    if ($comparacionPuntaje !== 0) {
+                        return $comparacionPuntaje;
+                    }
+
+                    return strnatcasecmp((string) $a['competidor_numero'], (string) $b['competidor_numero']);
+                }
+            );
+
+            $puestoActual = 0;
+            $ultimoPromedio = null;
+            foreach ($competidoresOrdenados as $indice => &$competidor) {
+                $promedioActual = (float) ($competidor['promedio_final'] ?? 0);
+                if ($ultimoPromedio === null || $promedioActual !== $ultimoPromedio) {
+                    $puestoActual = $indice + 1;
+                    $ultimoPromedio = $promedioActual;
+                }
+                $competidor['puesto'] = $puestoActual;
             }
             unset($competidor);
 

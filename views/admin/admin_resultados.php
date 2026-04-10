@@ -82,11 +82,13 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         .competitor-meta { color:var(--muted); font-size:.88rem; margin-top:4px; }
         .competitor-stats { display:flex; flex-wrap:wrap; gap:10px; }
         .stat-chip { display:inline-flex; align-items:center; border-radius:999px; background:#eef4ff; color:#2457cc; padding:7px 11px; font-size:.76rem; font-weight:700; }
+        .ranking-chip { background:#dbeafe; color:#1d4ed8; }
         .table-responsive { border:1px solid var(--border); border-radius:16px; overflow-x:auto; }
         .table { width:100%; min-width:1180px; border-collapse:collapse; }
         .table thead th { background:#f8fafc; color:#5b6472; border-bottom:1px solid var(--border); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; padding:12px 14px; text-align:left; }
         .table tbody td { padding:14px; font-size:.9rem; vertical-align:top; border-bottom:1px solid var(--border); }
         .table tbody tr:last-child td { border-bottom:0; }
+        .final-row td { background:#f8fbff; font-weight:700; }
         .empty-state { min-height:240px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed #cdd9ee; border-radius:18px; background:linear-gradient(180deg,#fbfdff 0%,#f6f9ff 100%); padding:32px 20px; }
         .empty-state-box { max-width:480px; }
         .empty-state-icon { width:72px; height:72px; margin:0 auto 18px; border-radius:20px; display:inline-flex; align-items:center; justify-content:center; background:var(--primary-soft); color:var(--primary); }
@@ -217,8 +219,10 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                                                     </div>
                                                 </div>
                                                 <div class="competitor-stats">
+                                                    <span class="stat-chip ranking-chip">Puesto: <?= (int) ($competidor['puesto'] ?? 0) ?></span>
                                                     <span class="stat-chip">Evaluaciones: <?= (int) ($competidor['total_evaluaciones'] ?? 0) ?></span>
-                                                    <span class="stat-chip">Promedio total: <?= htmlspecialchars(number_format((float) ($competidor['promedio_general'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <span class="stat-chip">Promedio final: <?= htmlspecialchars(number_format((float) ($competidor['promedio_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <span class="stat-chip">Puntaje final: <?= htmlspecialchars(number_format((float) ($competidor['puntaje_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></span>
                                                 </div>
                                             </div>
 
@@ -267,6 +271,25 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                                                                 <td><?= htmlspecialchars((string) ($evaluacion['creado_en'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                                             </tr>
                                                         <?php endforeach; ?>
+                                                        <tr class="final-row">
+                                                            <td colspan="3">Promedio final del competidor</td>
+                                                            <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
+                                                                <?php
+                                                                $criterioClave = (string) ($criterio['criterio_clave'] ?? '');
+                                                                $criterioPromedio = $competidor['criterios_promedio'][$criterioClave] ?? null;
+                                                                ?>
+                                                                <td>
+                                                                    <?php if ($criterioPromedio): ?>
+                                                                        <?= htmlspecialchars(number_format((float) ($criterioPromedio['promedio_otorgado'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?>/<?= htmlspecialchars(number_format((float) ($criterioPromedio['puntaje_maximo'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>
+                                                                    <?php else: ?>
+                                                                        -
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                            <?php endforeach; ?>
+                                                            <td><strong><?= htmlspecialchars(number_format((float) ($competidor['puntaje_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                                            <td><strong><?= htmlspecialchars(number_format((float) ($competidor['promedio_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                                            <td>Puesto <?= (int) ($competidor['puesto'] ?? 0) ?></td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
