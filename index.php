@@ -160,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center mb-4">
                 <i class="bi bi-shield-lock fs-1 text-primary"></i>
                 <h1 class="h4 mt-2 mb-1">Acceso al sistema</h1>
-                <p class="text-secondary mb-0">Jurado por código. Administrador por usuario y contraseña.</p>
             </div>
 
             <?php if ($error !== ''): ?>
@@ -182,7 +181,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="text-center mb-3">
-                    <div class="divider-label mb-2">Acceso administrador</div>
                     <button
                         type="button"
                         class="btn btn-outline-primary access-toggle"
