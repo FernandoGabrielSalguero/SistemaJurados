@@ -12,6 +12,17 @@ session_start();
 
 require_once __DIR__ . '/config.php';
 
+function authTieneColumna(PDO $pdo, string $columna): bool
+{
+    try {
+        $stmt = $pdo->prepare("SHOW COLUMNS FROM auth LIKE :columna");
+        $stmt->execute(['columna' => $columna]);
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
 function redirigirPorRol(string $rol): void
 {
     if ($rol === 'impulsa_administrador') {
@@ -42,8 +53,8 @@ if (isset($_SESSION['user_id'], $_SESSION['rol'])) {
 }
 
 $error = '';
-$usuario = '';
 $mostrarAccesoAdmin = false;
+$tieneAccesoHabilitado = authTieneColumna($pdo, 'acceso_habilitado');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario = trim((string) ($_POST['usuario'] ?? ''));
@@ -58,7 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($usuario === '' || $contrasena === '') {
             $error = 'Para ingresar como administrador completá usuario y contraseña.';
         } else {
-            $sql = 'SELECT id, usuario, contrasena, rol FROM auth WHERE usuario = :usuario AND rol = :rol LIMIT 1';
+            $sql = 'SELECT id, usuario, contrasena, rol';
+            if ($tieneAccesoHabilitado) {
+                $sql .= ', acceso_habilitado';
+            }
+            $sql .= ' FROM auth WHERE usuario = :usuario AND rol = :rol LIMIT 1';
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 'usuario' => $usuario,
@@ -72,6 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!$credencialesValidas) {
                 $error = 'Usuario o contraseña inválidos.';
+            } elseif ($tieneAccesoHabilitado && (int) ($auth['acceso_habilitado'] ?? 1) !== 1) {
+                $error = 'Tu acceso al sistema está deshabilitado.';
             } else {
                 iniciarSesionUsuario($auth);
                 redirigirPorRol($_SESSION['rol']);
@@ -81,20 +98,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($codigoAcceso === '') {
             $error = 'Ingresá un código de acceso válido.';
         } else {
-            $stmt = $pdo->prepare('SELECT id, usuario, codigo_acceso, rol FROM auth WHERE rol = :rol');
+            $sqlJurados = 'SELECT id, usuario, codigo_acceso, rol';
+            if ($tieneAccesoHabilitado) {
+                $sqlJurados .= ', acceso_habilitado';
+            }
+            $sqlJurados .= ' FROM auth WHERE rol = :rol';
+            $stmt = $pdo->prepare($sqlJurados);
             $stmt->execute(['rol' => 'impulsa_jurado']);
             $jurados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $juradoValido = null;
             foreach ($jurados as $jurado) {
-                if (password_verify($codigoAcceso, (string) $jurado['codigo_acceso'])) {
+                if (
+                    password_verify($codigoAcceso, (string) $jurado['codigo_acceso']) &&
+                    (!$tieneAccesoHabilitado || (int) ($jurado['acceso_habilitado'] ?? 1) === 1)
+                ) {
                     $juradoValido = $jurado;
                     break;
                 }
             }
 
             if ($juradoValido === null) {
-                $error = 'Código de acceso inválido.';
+                $error = 'Código de acceso inválido o usuario deshabilitado.';
             } else {
                 iniciarSesionUsuario($juradoValido);
                 redirigirPorRol($_SESSION['rol']);
@@ -176,6 +201,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         class="form-control"
                         id="codigo_acceso"
                         name="codigo_acceso"
+                        autocomplete="off"
+                        autocapitalize="off"
+                        autocorrect="off"
+                        spellcheck="false"
                         placeholder="Ingresá tu código"
                         value="">
                 </div>
@@ -201,7 +230,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 class="form-control"
                                 id="usuario"
                                 name="usuario"
-                                value="<?= htmlspecialchars($usuario, ENT_QUOTES, 'UTF-8') ?>">
+                                autocomplete="off"
+                                autocapitalize="off"
+                                autocorrect="off"
+                                spellcheck="false"
+                                value="">
                         </div>
 
                         <div class="mb-0">
@@ -210,7 +243,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 type="password"
                                 class="form-control"
                                 id="contrasena"
-                                name="contrasena">
+                                name="contrasena"
+                                autocomplete="new-password">
                         </div>
                     </div>
                 </div>

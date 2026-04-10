@@ -8,23 +8,62 @@ if (!isset($_SESSION['user_id']) || (string) ($_SESSION['rol'] ?? '') !== 'impul
 
 require_once __DIR__ . '/../../config.php';
 
-$stmt = $pdo->query(
-    "SELECT
-        COUNT(*) AS total_usuarios,
-        SUM(rol = 'impulsa_administrador') AS total_administradores,
-        SUM(rol = 'impulsa_jurado') AS total_jurados
-     FROM auth"
-);
-$stats = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : [];
+function authTieneColumna(PDO $pdo, string $columna): bool
+{
+    try {
+        $stmt = $pdo->prepare("SHOW COLUMNS FROM auth LIKE :columna");
+        $stmt->execute(['columna' => $columna]);
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        return false;
+    }
+}
 
-$stmtRecientes = $pdo->prepare(
-    "SELECT id, usuario, rol, creado_en
-     FROM auth
-     ORDER BY creado_en DESC, id DESC
-     LIMIT 10"
-);
-$stmtRecientes->execute();
-$recientes = $stmtRecientes->fetchAll(PDO::FETCH_ASSOC);
+$tieneAccesoHabilitado = authTieneColumna($pdo, 'acceso_habilitado');
+$tieneCodigoVisible = authTieneColumna($pdo, 'codigo_acceso_visible');
+$mensaje = '';
+$mensajeTipo = 'success';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_acceso_usuario_id']) && $tieneAccesoHabilitado) {
+    $usuarioId = (int) $_POST['toggle_acceso_usuario_id'];
+    $nuevoEstado = isset($_POST['acceso_habilitado']) ? 1 : 0;
+
+    $stmtToggle = $pdo->prepare(
+        "UPDATE auth
+         SET acceso_habilitado = :estado
+         WHERE id = :id"
+    );
+
+    if ($stmtToggle->execute([
+        'estado' => $nuevoEstado,
+        'id' => $usuarioId,
+    ])) {
+        $mensaje = $nuevoEstado === 1
+            ? 'El acceso del usuario fue habilitado.'
+            : 'El acceso del usuario fue deshabilitado.';
+    } else {
+        $mensaje = 'No se pudo actualizar el acceso del usuario.';
+        $mensajeTipo = 'danger';
+    }
+}
+
+$selectUsuarios = "SELECT id, usuario, rol, creado_en";
+if ($tieneAccesoHabilitado) {
+    $selectUsuarios .= ", acceso_habilitado";
+}
+$selectUsuarios .= " FROM auth ORDER BY creado_en DESC, id DESC";
+
+$stmtUsuarios = $pdo->query($selectUsuarios);
+$usuarios = $stmtUsuarios ? $stmtUsuarios->fetchAll(PDO::FETCH_ASSOC) : [];
+
+$selectJurados = "SELECT id, usuario, rol";
+if ($tieneCodigoVisible) {
+    $selectJurados .= ", codigo_acceso_visible";
+}
+$selectJurados .= " FROM auth WHERE rol = 'impulsa_jurado' ORDER BY creado_en DESC, id DESC";
+
+$stmtJurados = $pdo->query($selectJurados);
+$jurados = $stmtJurados ? $stmtJurados->fetchAll(PDO::FETCH_ASSOC) : [];
 
 $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Administrador');
 ?>
@@ -52,13 +91,14 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         :root {
             --admin-surface: #ffffff;
-            --admin-bg: #f3f6fb;
             --admin-border: #e5ebf4;
             --admin-text: #1f2937;
             --admin-muted: #67768a;
             --admin-primary: #2f6df6;
             --admin-primary-soft: #eaf1ff;
             --admin-danger: #ef4444;
+            --admin-success: #15803d;
+            --admin-warning: #b45309;
             --admin-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
             --sidebar-width: 208px;
             --sidebar-collapsed-width: 72px;
@@ -173,11 +213,6 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .sidebar-menu li.active {
             background: var(--admin-primary-soft);
             color: #2151c8;
-        }
-
-        .sidebar-menu li:not(.active):hover {
-            background: #f8fafc;
-            transform: translateX(2px);
         }
 
         .sidebar-footer {
@@ -298,138 +333,34 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         .hero-card p,
         .section-caption,
-        .metric-copy,
-        .table-note {
+        .table-note,
+        .jurado-code-note {
             margin: 0;
             color: var(--admin-muted);
             line-height: 1.5;
             font-size: 0.92rem;
         }
 
-        .hero-actions {
-            margin-top: 16px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        .alert-inline {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            border: 1px solid #dbeafe;
+            background: #eff6ff;
+            color: #1d4ed8;
         }
 
-        .primary-chip,
-        .secondary-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            border-radius: 13px;
-            padding: 10px 14px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.92rem;
-        }
-
-        .primary-chip {
-            background: linear-gradient(135deg, #2f6df6, #4391ff);
-            color: #fff;
-            box-shadow: 0 10px 20px rgba(47, 109, 246, 0.18);
-        }
-
-        .secondary-chip {
-            background: #fff;
-            color: #23408f;
-            border: 1px solid #d8e4ff;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-            margin-top: 18px;
-        }
-
-        .metric-card {
-            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-            border: 1px solid var(--admin-border);
-            border-radius: 18px;
-            padding: 18px;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
-        }
-
-        .metric-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .metric-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--admin-primary-soft);
-            color: var(--admin-primary);
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .metric-label {
-            color: var(--admin-muted);
-            font-size: 0.88rem;
-            margin-bottom: 4px;
-        }
-
-        .metric-value {
-            font-size: 1.8rem;
-            line-height: 1;
-            font-weight: 800;
-            color: #202633;
-            margin-bottom: 8px;
+        .alert-inline.danger {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #b91c1c;
         }
 
         .split-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+            grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
             gap: 16px;
-        }
-
-        .mini-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .mini-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px;
-            border-radius: 16px;
-            border: 1px solid var(--admin-border);
-            background: #fff;
-        }
-
-        .mini-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 11px;
-            background: var(--admin-primary-soft);
-            color: var(--admin-primary);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            flex-shrink: 0;
-            font-size: 0.95rem;
-        }
-
-        .mini-item strong,
-        .table-title {
-            display: block;
-            margin-bottom: 4px;
-            color: #202633;
-            font-size: 0.94rem;
         }
 
         .table-responsive {
@@ -443,7 +374,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         .table {
             margin-bottom: 0;
-            min-width: 560px;
+            min-width: 720px;
         }
 
         .table thead th {
@@ -459,7 +390,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .table tbody td {
             padding: 12px 14px;
             font-size: 0.9rem;
-            vertical-align: top;
+            vertical-align: middle;
         }
 
         .table tbody tr:last-child td {
@@ -486,10 +417,109 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             color: #a16207;
         }
 
-        .empty-state {
-            text-align: center;
-            color: var(--admin-muted);
-            padding: 28px 16px;
+        .switch-form {
+            margin: 0;
+        }
+
+        .switch-field {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .switch-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .switch-label {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 44px;
+            height: 24px;
+            border-radius: 999px;
+            background: #dbe4f2;
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+
+        .switch-label::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+            transition: transform 0.2s ease;
+        }
+
+        .switch-input:checked + .switch-label {
+            background: #3b82f6;
+        }
+
+        .switch-input:checked + .switch-label::after {
+            transform: translateX(20px);
+        }
+
+        .switch-state {
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .switch-state.enabled {
+            color: var(--admin-success);
+        }
+
+        .switch-state.disabled {
+            color: var(--admin-warning);
+        }
+
+        .jurado-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .jurado-item {
+            border: 1px solid var(--admin-border);
+            border-radius: 16px;
+            padding: 14px;
+            background: #fff;
+        }
+
+        .jurado-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .jurado-name {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #202633;
+        }
+
+        .jurado-code {
+            display: inline-flex;
+            align-items: center;
+            min-height: 36px;
+            width: 100%;
+            padding: 9px 11px;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            font-size: 0.88rem;
+            font-weight: 700;
+            word-break: break-all;
         }
 
         body.sidebar-collapsed .sidebar {
@@ -521,10 +551,6 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         @media (max-width: 1180px) {
-            .metrics-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
             .split-grid {
                 grid-template-columns: 1fr;
             }
@@ -564,10 +590,6 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                 border-radius: 18px;
             }
 
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-
             .navbar-actions .navbar-subtitle {
                 display: none;
             }
@@ -582,18 +604,13 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                 font-size: 13px;
             }
 
-            .hero-actions {
-                flex-direction: column;
-            }
-
-            .primary-chip,
-            .secondary-chip {
-                width: 100%;
-                justify-content: center;
-            }
-
             .logout-link span:last-child {
                 display: none;
+            }
+
+            .jurado-item-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -614,12 +631,8 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                         <span class="link-text">Inicio</span>
                     </li>
                     <li>
-                        <span class="material-icons">dashboard</span>
-                        <span class="link-text">Panel</span>
-                    </li>
-                    <li>
-                        <span class="material-icons">badge</span>
-                        <span class="link-text">Administradores</span>
+                        <span class="material-icons">group</span>
+                        <span class="link-text">Usuarios</span>
                     </li>
                     <li>
                         <span class="material-icons">groups</span>
@@ -668,63 +681,23 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                 <div class="page-shell">
                     <div class="panel-card hero-card">
                         <h1>¡Qué gusto verte!</h1>
-                        <p>Estás viendo el panel interno de administración de Impulsa. Esta vista quedó organizada con menú lateral, métricas y una tabla central para revisar los accesos guardados en la tabla <code>auth</code>.</p>
-                        <div class="hero-actions">
-                            <a href="#resumen" class="primary-chip">
-                                <span class="material-icons">play_arrow</span>
-                                <span>Ver resumen</span>
-                            </a>
-                            <a href="#registros" class="secondary-chip">
-                                <span class="material-icons">table_rows</span>
-                                <span>Ir a registros</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="panel-card" id="resumen">
-                        <h2 class="section-title">Resumen general</h2>
-                        <p class="section-caption">Indicadores rápidos del sistema de acceso para administradores y jurados.</p>
-
-                        <div class="metrics-grid">
-                            <article class="metric-card">
-                                <div class="metric-head">
-                                    <div>
-                                        <div class="metric-label">Usuarios en auth</div>
-                                        <div class="metric-value"><?= (int) ($stats['total_usuarios'] ?? 0) ?></div>
-                                    </div>
-                                    <span class="metric-icon material-icons">group</span>
-                                </div>
-                                <p class="metric-copy">Total de credenciales cargadas en la tabla principal de acceso.</p>
-                            </article>
-
-                            <article class="metric-card">
-                                <div class="metric-head">
-                                    <div>
-                                        <div class="metric-label">Administradores</div>
-                                        <div class="metric-value"><?= (int) ($stats['total_administradores'] ?? 0) ?></div>
-                                    </div>
-                                    <span class="metric-icon material-icons">admin_panel_settings</span>
-                                </div>
-                                <p class="metric-copy">Usuarios que ingresan con combinación de usuario y contraseña.</p>
-                            </article>
-
-                            <article class="metric-card">
-                                <div class="metric-head">
-                                    <div>
-                                        <div class="metric-label">Jurados</div>
-                                        <div class="metric-value"><?= (int) ($stats['total_jurados'] ?? 0) ?></div>
-                                    </div>
-                                    <span class="metric-icon material-icons">verified_user</span>
-                                </div>
-                                <p class="metric-copy">Usuarios habilitados para entrar con código de acceso válido.</p>
-                            </article>
-                        </div>
+                        <p>Desde acá podés administrar los usuarios del sistema, habilitar o bloquear accesos y revisar los jurados registrados.</p>
+                        <?php if ($mensaje !== ''): ?>
+                            <div class="alert-inline <?= $mensajeTipo === 'danger' ? 'danger' : '' ?>">
+                                <?= htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8') ?>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (!$tieneAccesoHabilitado): ?>
+                            <div class="alert-inline danger">
+                                Falta la columna <code>acceso_habilitado</code> en la tabla <code>auth</code>. Hasta que la agregues, los switches no van a tener efecto.
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="split-grid">
                         <div class="panel-card" id="registros">
-                            <h2 class="section-title">Últimos accesos cargados</h2>
-                            <p class="table-note">Listado de registros disponibles en <code>auth</code>, ordenados por fecha de creación.</p>
+                            <h2 class="section-title">Usuarios registrados en el sistema</h2>
+                            <p class="table-note">Listado completo de usuarios creados en <code>auth</code> con control de acceso individual.</p>
 
                             <div class="table-responsive">
                                 <table class="table align-middle mb-0">
@@ -734,29 +707,49 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                             <th>Usuario</th>
                                             <th>Rol</th>
                                             <th>Creado</th>
+                                            <th>Acceso</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if ($recientes): ?>
-                                            <?php foreach ($recientes as $registro): ?>
-                                                <?php $esAdmin = (string) $registro['rol'] === 'impulsa_administrador'; ?>
+                                        <?php if ($usuarios): ?>
+                                            <?php foreach ($usuarios as $usuario): ?>
+                                                <?php
+                                                $esAdmin = (string) $usuario['rol'] === 'impulsa_administrador';
+                                                $accesoHabilitado = $tieneAccesoHabilitado ? (int) ($usuario['acceso_habilitado'] ?? 1) === 1 : true;
+                                                ?>
                                                 <tr>
-                                                    <td><?= (int) $registro['id'] ?></td>
-                                                    <td>
-                                                        <strong class="table-title"><?= htmlspecialchars((string) $registro['usuario'], ENT_QUOTES, 'UTF-8') ?></strong>
-                                                        <span class="table-note">Credencial activa para ingreso</span>
-                                                    </td>
+                                                    <td><?= (int) $usuario['id'] ?></td>
+                                                    <td><?= htmlspecialchars((string) $usuario['usuario'], ENT_QUOTES, 'UTF-8') ?></td>
                                                     <td>
                                                         <span class="role-pill <?= $esAdmin ? 'role-admin' : 'role-jurado' ?>">
-                                                            <?= htmlspecialchars((string) $registro['rol'], ENT_QUOTES, 'UTF-8') ?>
+                                                            <?= htmlspecialchars((string) $usuario['rol'], ENT_QUOTES, 'UTF-8') ?>
                                                         </span>
                                                     </td>
-                                                    <td><?= htmlspecialchars((string) ($registro['creado_en'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                    <td><?= htmlspecialchars((string) ($usuario['creado_en'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                    <td>
+                                                        <form method="post" class="switch-form">
+                                                            <input type="hidden" name="toggle_acceso_usuario_id" value="<?= (int) $usuario['id'] ?>">
+                                                            <div class="switch-field">
+                                                                <input
+                                                                    class="switch-input"
+                                                                    type="checkbox"
+                                                                    id="acceso_usuario_<?= (int) $usuario['id'] ?>"
+                                                                    name="acceso_habilitado"
+                                                                    <?= $accesoHabilitado ? 'checked' : '' ?>
+                                                                    <?= $tieneAccesoHabilitado ? '' : 'disabled' ?>
+                                                                    onchange="this.form.submit()">
+                                                                <label class="switch-label" for="acceso_usuario_<?= (int) $usuario['id'] ?>"></label>
+                                                                <span class="switch-state <?= $accesoHabilitado ? 'enabled' : 'disabled' ?>">
+                                                                    <?= $accesoHabilitado ? 'Habilitado' : 'Bloqueado' ?>
+                                                                </span>
+                                                            </div>
+                                                        </form>
+                                                    </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
                                             <tr>
-                                                <td colspan="4" class="empty-state">No hay registros disponibles en <code>auth</code>.</td>
+                                                <td colspan="5" class="text-center py-4 text-secondary">No hay usuarios registrados todavía.</td>
                                             </tr>
                                         <?php endif; ?>
                                     </tbody>
@@ -765,33 +758,34 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                         </div>
 
                         <aside class="panel-card">
-                            <h2 class="section-title">Cómo navegar</h2>
-                            <p class="section-caption">El menú lateral quedó fijo en un único estilo visual y adaptado a pantallas chicas.</p>
+                            <h2 class="section-title">Jurados registrados</h2>
+                            <p class="section-caption">Listado de usuarios con rol <code>impulsa_jurado</code>.</p>
 
-                            <div class="mini-list">
-                                <div class="mini-item">
-                                    <span class="mini-badge">1</span>
-                                    <div>
-                                        <strong>Inicio</strong>
-                                        <span class="table-note">Acceso rápido al resumen del dashboard.</span>
-                                    </div>
+                            <?php if (!$tieneCodigoVisible): ?>
+                                <div class="alert-inline danger" style="margin-top:16px;">
+                                    El código original no puede leerse desde <code>codigo_acceso</code> porque está hasheado. Si querés verlo acá, necesitás una columna adicional como <code>codigo_acceso_visible</code>.
                                 </div>
+                            <?php endif; ?>
 
-                                <div class="mini-item">
-                                    <span class="mini-badge">2</span>
-                                    <div>
-                                        <strong>Panel</strong>
-                                        <span class="table-note">Espacio disponible para sumar nuevos módulos.</span>
-                                    </div>
-                                </div>
-
-                                <div class="mini-item">
-                                    <span class="mini-badge">3</span>
-                                    <div>
-                                        <strong>Registros</strong>
-                                        <span class="table-note">Zona para controlar administradores y jurados creados.</span>
-                                    </div>
-                                </div>
+                            <div class="jurado-list">
+                                <?php if ($jurados): ?>
+                                    <?php foreach ($jurados as $jurado): ?>
+                                        <div class="jurado-item">
+                                            <div class="jurado-item-header">
+                                                <div class="jurado-name"><?= htmlspecialchars((string) $jurado['usuario'], ENT_QUOTES, 'UTF-8') ?></div>
+                                                <span class="role-pill role-jurado">impulsa_jurado</span>
+                                            </div>
+                                            <div class="jurado-code">
+                                                <?= $tieneCodigoVisible
+                                                    ? htmlspecialchars((string) ($jurado['codigo_acceso_visible'] ?? 'Sin código visible'), ENT_QUOTES, 'UTF-8')
+                                                    : 'No disponible con el esquema actual'
+                                                ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="jurado-code-note">No hay jurados registrados.</div>
+                                <?php endif; ?>
                             </div>
                         </aside>
                     </div>
