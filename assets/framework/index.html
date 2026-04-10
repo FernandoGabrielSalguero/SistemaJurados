@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UI Framework Fernando Salguero</title>
+
+    <!-- Material Icons CDN -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Framework CSS -->
+    <link rel="stylesheet" href="./framework.css">
+
+</head>
+
+<body>
+
+    <!-- Contenedor principal -->
+    <div class="layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="material-icons logo-icon">dashboard</span>
+                <span class="logo-text">Fer</span>
+            </div>
+
+            <nav class="sidebar-menu">
+                <ul>
+                    <li onclick="location.href='index.html'">
+                        <span class="material-icons">home</span><span class="link-text">Inicio</span>
+                    </li>
+                    <li><span class="material-icons">dashboard</span><span class="link-text">Dashboard</span></li>
+                    <li><span class="material-icons">folder</span><span class="link-text">Proyectos</span></li>
+                    <li><span class="material-icons">calendar_today</span><span class="link-text">Calendario</span></li>
+                    <li><span class="material-icons">email</span><span class="link-text">Correo</span></li>
+                    <li><span class="material-icons">bar_chart</span><span class="link-text">Reportes</span></li>
+                    <li onclick="location.href='documentation.html'">
+                        <span class="material-icons">description</span><span class="link-text">Documentación</span>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-icon" onclick="toggleSidebar()">
+                    <span class="material-icons" id="collapseIcon">chevron_left</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Contenido principal -->
+        <div class="main">
+
+            <!-- header -->
+            <header class="navbar">
+                <button class="btn-icon" onclick="toggleSidebar()">
+                    <span class="material-icons">menu</span>
+                </button>
+                <div class="navbar-title">Mi Dashboard</div>
+            </header>
+
+            <!-- cuerpo de la página  -->
+            <section class="content">
+
+                <!-- Bienvenida -->
+                <div class="card">
+                    <h2>Hola 👋</h2>
+                    <p>Este es un dashboard de ejemplo con un sidebar moderno y responsive.</p>
+                    <div class="form-buttons">
+                        <button class="btn btn-info" onclick="startTour()">Iniciar tutorial</button>
+                    </div>
+                </div>
+
+
+
+
+                <!-- Formulario -->
+                <div class="card">
+                    <h2>Formularios</h2>
+                    <form class="form-modern">
+                        <div class="form-grid grid-4">
+
+                            <!-- Nombre completo -->
+                            <div class="input-group">
+                                <label for="nombre">Nombre completo</label>
+                                <div class="input-icon input-icon-name">
+                                    <input type="text" id="nombre" name="nombre" placeholder="Juan Pérez" required />
+                                </div>
+                            </div>
+
+                            <!-- Nombre (con buscador en el mismo input) -->
+<div class="input-group">
+  <label for="nombre-buscador">Buscar persona</label>
+  <div class="input-icon input-icon-name typeahead-wrapper">
+    <input
+      type="text"
+      id="nombre-buscador"
+      name="nombre_buscador"
+      placeholder="Empezá a escribir un nombre…"
+      autocomplete="off"
+      aria-autocomplete="list"
+      aria-expanded="false"
+      aria-controls="ta-list-nombres"
+      aria-activedescendant=""
+      required
+    />
+    <!-- Sugerencias -->
+    <ul id="ta-list-nombres" class="typeahead-list" role="listbox" hidden></ul>
+  </div>
+  <small class="gform-helper">Escribí y elegí una opción con Enter o clic.</small>
+</div>
+
+                            <!-- Correo electrónico -->
+                            <div class="input-group">
+                                <label for="email">Correo electrónico</label>
+                                <div class="input-icon input-icon-email">
+                                    <input id="email" name="email" placeholder="usuario@correo.com" />
+                                </div>
+                            </div>
+
+                            <!-- Fecha de nacimiento -->
+                            <div class="input-group">
+                                <label for="fecha">Fecha de nacimiento</label>
+                                <div class="input-icon input-icon-date">
+                                    <input id="fecha" name="fecha" />
+                                </div>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="input-group">
+                                <label for="telefono">Teléfono</label>
+                                <div class="input-icon input-icon-phone">
+                                    <input id="telefono" name="telefono" />
+                                </div>
+                            </div>
+
+                            <!-- DNI -->
+                            <div class="input-group">
+                                <label for="dni">DNI</label>
+                                <div class="input-icon input-icon-dni">
+                                    <input id="dni" name="dni" />
+                                </div>
+                            </div>
+
+                            <!-- Edad -->
+                            <div class="input-group">
+                                <label for="edad">Edad</label>
+                                <div class="input-icon input-icon-age">
+                                    <input id="edad" name="edad" />
+                                </div>
+                            </div>
+
+                            <!-- CUIT -->
+                            <div class="input-group">
+                                <label for="cuit">CUIT</label>
+                                <div class="input-icon input-icon-cuit">
+                                    <input id="cuit" name="cuit" />
+                                </div>
+                            </div>
+
+                            <!-- Provincia -->
+                            <div class="input-group">
+                                <label for="provincia">Provincia</label>
+                                <div class="input-icon input-icon-globe">
+                                    <select id="provincia" name="provincia" required>
+                                        <option value="">Seleccionar</option>
+                                        <option>Buenos Aires</option>
+                                        <option>Córdoba</option>
+                                        <option>Santa Fe</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Localidad -->
+                            <div class="input-group">
+                                <label for="localidad">Localidad</label>
+                                <div class="input-icon input-icon-city">
+                                    <input type="text" id="localidad" name="localidad" required />
+                                </div>
+                            </div>
+
+                            <!-- Código Postal -->
+                            <div class="input-group">
+                                <label for="cp">Código Postal</label>
+                                <div class="input-icon input-icon-cp">
+                                    <input type="text" id="cp" name="cp" />
+                                </div>
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="input-group">
+                                <label for="direccion">Dirección</label>
+                                <div class="input-icon input-icon-address">
+                                    <input type="text" id="direccion" name="direccion" required />
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Observaciones -->
+                        <div class="input-group">
+                            <label for="observaciones">Observaciones</label>
+                            <div class="input-icon input-icon-comment">
+                                <textarea id="observaciones" name="observaciones" maxlength="233" rows="3"
+                                    placeholder="Escribí un comentario..."></textarea>
+                            </div>
+                            <small class="char-count" data-for="observaciones">Quedan 233 caracteres.</small>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="form-buttons">
+                            <button class="btn btn-aceptar" type="submit">Enviar</button>
+                            <button class="btn btn-cancelar" type="reset">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ===== Matriz estilo Google Forms ===== -->
+                <div class="card">
+                    <h2>Matriz de prueba</h2>
+
+                    <form id="form-matriz" class="gform-grid cols-1" novalidate>
+                        <div class="gform-question" data-required="true">
+                            <div class="gform-legend">
+                                Matriz de prueba <span class="gform-required">*</span>
+                            </div>
+                            <div class="gform-helper">
+                                Primero seleccioná el producto (checkbox). Solo entonces podés elegir una opción en la
+                                fila.
+                            </div>
+
+                            <table class="gform-matrix" role="table" aria-label="Matriz de prueba">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="gfm-empty"></th>
+                                        <th scope="col">SVE</th>
+                                        <th scope="col">Productor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Row 1 -->
+                                    <tr>
+                                        <th scope="row">
+                                            <label class="gfm-prod">
+                                                <input type="checkbox" class="gfm-row-toggle" name="m_sel[]"
+                                                    value="row1" data-row="row1" />
+                                                <span>Producto 1</span>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <label class="gfm-radio">
+                                                <input type="radio" name="m_row1" value="sve" disabled />
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="gfm-radio">
+                                                <input type="radio" name="m_row1" value="productor" disabled />
+                                            </label>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Row 2 -->
+                                    <tr>
+                                        <th scope="row">
+                                            <label class="gfm-prod">
+                                                <input type="checkbox" class="gfm-row-toggle" name="m_sel[]"
+                                                    value="row2" data-row="row2" />
+                                                <span>Producto 2</span>
+                                            </label>
+                                        </th>
+                                        <td>
+                                            <label class="gfm-radio">
+                                                <input type="radio" name="m_row2" value="sve" disabled />
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="gfm-radio">
+                                                <input type="radio" name="m_row2" value="productor" disabled />
+                                            </label>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="gform-error">Seleccioná al menos un producto y, para cada producto seleccionado,
+                                elegí una opción.</div>
+                        </div>
+
+                        <div class="gform-actions">
+                            <button type="button" class="gform-btn">Atrás</button>
+                            <button type="submit" class="gform-btn gform-primary">Enviar</button>
+                        </div>
+                    </form>
+                </div>
+
+
+
+                <!-- formulario de google  -->
+
+                <h2 style="margin-bottom: 1rem;">Formulario estilo Google (demo)</h2>
+
+                <form id="form-dron" class="gform-grid cols-4" novalidate>
+                    <!-- 1) Short answer -->
+                    <div class="gform-question" data-required="true">
+                        <label class="gform-label" for="g_razon">RAZON SOCIAL <span
+                                class="gform-required">*</span></label>
+                        <div class="gform-helper">Debe ser la razón social vinculada a la cooperativa.</div>
+                        <input class="gform-input" id="g_razon" name="g_razon" type="text" placeholder="Tu respuesta" />
+                        <div class="gform-error">Esta pregunta es obligatoria.</div>
+                    </div>
+
+                    <!-- 2) Select / dropdown -->
+                    <div class="gform-question" data-required="true">
+                        <label class="gform-label" for="g_coop">COOPERATIVA A LA QUE PERTENECE <span
+                                class="gform-required">*</span></label>
+                        <div class="gform-select">
+                            <select id="g_coop" name="g_coop">
+                                <option value="">Elegir</option>
+                                <option>Cooperativa La Dormida</option>
+                                <option>Cooperativa Las Trincheras</option>
+                                <option>Cooperativa Productores de Junín</option>
+                            </select>
+                            <span class="material-icons gform-arrow">expand_more</span>
+                        </div>
+                        <div class="gform-error">Esta pregunta es obligatoria.</div>
+                    </div>
+
+                    <!-- 3) Radio (SI/NO) con helper -->
+                    <div class="gform-question" role="group" aria-labelledby="q_corriente_label">
+                        <div id="q_corriente_label" class="gform-legend">
+                            ¿CUENTA CON DISPONIBILIDAD DE CORRIENTE ELÉCTRICA? <span class="gform-required">*</span>
+                        </div>
+                        <div class="gform-helper">
+                            Se requiere toma de 35A para recargar baterías durante la pulverización.
+                        </div>
+                        <div class="gform-options">
+                            <label class="gform-option"><input type="radio" name="g_corriente" value="si">
+                                <span>SI</span></label>
+                            <label class="gform-option"><input type="radio" name="g_corriente" value="no">
+                                <span>NO</span></label>
+                        </div>
+                        <div class="gform-error">Esta pregunta es obligatoria.</div>
+                    </div>
+
+                    <!-- 4) Checkbox (con “Otros” inline) -->
+                    <div class="gform-question" role="group" aria-labelledby="q_motivo_label">
+                        <div id="q_motivo_label" class="gform-legend">
+                            MOTIVO DEL SERVICIO <span class="gform-required">*</span>
+                        </div>
+                        <div class="gform-options">
+                            <label class="gform-option"><input type="checkbox" name="g_motivo[]" value="mildiu">
+                                <span>Curación para Mildiu</span></label>
+                            <label class="gform-option"><input type="checkbox" name="g_motivo[]" value="oidio">
+                                <span>Curación para Oidio</span></label>
+                            <label class="gform-option gform-option-otros">
+                                <input type="checkbox" id="g_motivo_otros_chk" name="g_motivo[]" value="otros"
+                                    aria-controls="g_motivo_otros">
+                                <span>Otros:</span>
+                                <input type="text" id="g_motivo_otros" name="g_motivo_otros"
+                                    class="gform-input gform-input-inline oculto" placeholder="Especificar" disabled>
+                            </label>
+                        </div>
+                        <div class="gform-error">Seleccioná al menos una opción.</div>
+                    </div>
+
+                    <!-- 5) Checkbox list (quincenas) -->
+                    <div class="gform-question" role="group" aria-labelledby="q_momento_label">
+                        <div id="q_momento_label" class="gform-legend">
+                            MOMENTO EN QUE DESEA CONTRATAR EL SERVICIO <span class="gform-required">*</span>
+                        </div>
+                        <div class="gform-options">
+                            <label class="gform-option"><input type="checkbox" name="g_quince[]" value="oct1">
+                                <span>Primera quincena de Octubre</span></label>
+                            <label class="gform-option"><input type="checkbox" name="g_quince[]" value="oct2">
+                                <span>Segunda quincena de Octubre</span></label>
+                            <label class="gform-option"><input type="checkbox" name="g_quince[]" value="nov1">
+                                <span>Primera quincena de Noviembre</span></label>
+                        </div>
+                        <div class="gform-error">Seleccioná al menos una opción.</div>
+                    </div>
+
+                    <!-- 6) Long answer / párrafo -->
+                    <div class="gform-question span-2" data-required="true">
+                        <label class="gform-label" for="g_obs">OBSERVACIONES <span
+                                class="gform-required">*</span></label>
+                        <textarea class="gform-input gform-textarea" id="g_obs" name="g_obs" rows="3"
+                            placeholder="Tu respuesta"></textarea>
+                        <div class="gform-error">Esta pregunta es obligatoria.</div>
+                    </div>
+
+                    <!-- 7) Checkbox list (con complemento) -->
+                    <div class="gform-question" role="group" aria-labelledby="q_productos_label">
+                        <div id="q_productos_label" class="gform-legend">
+                            En el caso de necesitar productos fitosanitarios para realizar la pulverización indicar los
+                            que sean necesarios. <span class="gform-required">*</span>
+                        </div>
+
+                        <div class="gform-options gopts-with-complement">
+                            <!-- Productos para Lobesia -->
+                            <div class="gform-optbox">
+                                <label class="gform-option">
+                                    <input type="checkbox" name="g_quince[]" value="lobesia"
+                                        data-complement="#cmp-lobesia">
+                                    <span>Productos para Lobesia/Polilla de la Vid</span>
+                                </label>
+                                <div id="cmp-lobesia" class="gform-complement" hidden>
+                                    <div class="gform-miniopts">
+                                        <span>¿Tenés el producto?</span>
+                                        <label><input type="radio" name="src-lobesia" value="sve" checked> No</label>
+                                        <label><input type="radio" name="src-lobesia" value="yo"> Sí</label>
+                                    </div>
+                                    <div class="gform-brand" hidden>
+                                        <input type="text" class="gform-input gform-input-inline" name="marca-lobesia"
+                                            placeholder="Marca del producto">
+                                        <div class="gform-helper">Indicá marca y, si aplica, concentración/composición.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Productos para Peronospora -->
+                            <div class="gform-optbox">
+                                <label class="gform-option">
+                                    <input type="checkbox" name="g_quince[]" value="peronospora"
+                                        data-complement="#cmp-peronospora">
+                                    <span>Productos para Peronospora de la vid</span>
+                                </label>
+                                <div id="cmp-peronospora" class="gform-complement" hidden>
+                                    <div class="gform-miniopts">
+                                        <span>¿Tenés el producto?</span>
+                                        <label><input type="radio" name="src-peronospora" value="sve" checked>
+                                            No</label>
+                                        <label><input type="radio" name="src-peronospora" value="yo"> Sí</label>
+                                    </div>
+                                    <div class="gform-brand" hidden>
+                                        <input type="text" class="gform-input gform-input-inline"
+                                            name="marca-peronospora" placeholder="Marca del producto">
+                                        <div class="gform-helper">Indicá marca y, si aplica, concentración/composición.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Productos para Oidio -->
+                            <div class="gform-optbox">
+                                <label class="gform-option">
+                                    <input type="checkbox" name="g_quince[]" value="oidio" data-complement="#cmp-oidio">
+                                    <span>Productos para Oidio/Quintal de la vid</span>
+                                </label>
+                                <div id="cmp-oidio" class="gform-complement" hidden>
+                                    <div class="gform-miniopts">
+                                        <span>¿Tenés el producto?</span>
+                                        <label><input type="radio" name="src-oidio" value="sve" checked> No</label>
+                                        <label><input type="radio" name="src-oidio" value="yo"> Sí</label>
+                                    </div>
+                                    <div class="gform-brand" hidden>
+                                        <input type="text" class="gform-input gform-input-inline" name="marca-oidio"
+                                            placeholder="Marca del producto">
+                                        <div class="gform-helper">Indicá marca y, si aplica, concentración/composición.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Productos para Podredumbre -->
+                            <div class="gform-optbox">
+                                <label class="gform-option">
+                                    <input type="checkbox" name="g_quince[]" value="podredumbre"
+                                        data-complement="#cmp-podredumbre">
+                                    <span>Productos para Podredimbre de los racimos</span>
+                                </label>
+                                <div id="cmp-podredumbre" class="gform-complement" hidden>
+                                    <div class="gform-miniopts">
+                                        <span>¿Tenés el producto?</span>
+                                        <label><input type="radio" name="src-podredumbre" value="sve" checked>
+                                            No</label>
+                                        <label><input type="radio" name="src-podredumbre" value="yo"> Sí</label>
+                                    </div>
+                                    <div class="gform-brand" hidden>
+                                        <input type="text" class="gform-input gform-input-inline"
+                                            name="marca-podredumbre" placeholder="Marca del producto">
+                                        <div class="gform-helper">Indicá marca y, si aplica, concentración/composición.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gform-error">Seleccioná al menos una opción.</div>
+                    </div>
+
+                    <!-- ¿Estás en la ubicación de la finca? -->
+                    <div class="gform-question span-2" role="group" aria-labelledby="q_ubicacion_label">
+                        <div id="q_ubicacion_label" class="gform-label">
+                            ¿Estás en la ubicación de la finca? <span class="gform-required">*</span>
+                        </div>
+
+                        <div class="gform-miniopts">
+                            <label><input type="radio" name="en-finca" value="no" checked> No</label>
+                            <label><input type="radio" name="en-finca" value="si"> Sí, capturar coordenadas</label>
+                        </div>
+
+                        <div class="gform-helper" id="ubicacion_status">No se capturarán coordenadas.</div>
+
+                        <!-- Campos que se envían por AJAX -->
+                        <input type="hidden" name="lat" id="ubicacion_lat">
+                        <input type="hidden" name="lng" id="ubicacion_lng">
+                        <input type="hidden" name="acc" id="ubicacion_acc">
+                        <input type="hidden" name="ubicacion_ts" id="ubicacion_ts">
+                    </div>
+
+
+                    <!-- Acciones (podés dejarlas full width) -->
+                    <div class="gform-actions span-4">
+                        <button type="button" class="gform-btn">Atrás</button>
+                        <button type="submit" class="gform-btn gform-primary">Siguiente</button>
+                        <a href="#" class="gform-clear"
+                            onclick="document.getElementById('form-dron').reset();return false;">Borrar formulario</a>
+                    </div>
+                </form>
+
+
+                <br>
+                <br>
+
+                <!-- Tabla -->
+                <div class="card tabla-card">
+                    <h2>Tablas</h2>
+                    <div class="tabla-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Apellido</th>
+                                    <th>Apodo</th>
+                                    <th>Edad</th>
+                                    <th>Genero</th>
+                                    <th>Estado civil</th>
+                                    <th>Antecedentes</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Carlos</td>
+                                    <td>Ruiz</td>
+                                    <td>Carlos</td>
+                                    <td>19</td>
+                                    <td>Masculino</td>
+                                    <td>Soltero</td>
+                                    <td>Sin precedentes</td>
+                                    <td>carlos@mail.com</td>
+                                    <td>Administrador</td>
+                                    <td><span class="badge success">Activo</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Laura</td>
+                                    <td>Méndez</td>
+                                    <td>Laura</td>
+                                    <td>22</td>
+                                    <td>Femenino</td>
+                                    <td>Soltera</td>
+                                    <td>Con antecedentes</td>
+                                    <td>laura@mail.com</td>
+                                    <td>Editor</td>
+                                    <td><span class="badge warning">Pendiente</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TARJETA DE METRICAS -->
+                <!-- Métricas redondas -->
+                <div class="card">
+                    <h2>Métricas</h2>
+
+                    <div class="metrics-round-grid">
+                        <!-- 1 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Ventas</span>
+                                <span class="metric-count">1,245</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-ventas"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-ventas">
+                                <ul>
+                                    <li>Online: 950</li>
+                                    <li>Locales: 295</li>
+                                    <li>Promedio diario: 42</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- 2 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Usuarios</span>
+                                <span class="metric-count">3,560</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-usuarios"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-usuarios">
+                                <ul>
+                                    <li>Nuevos: 320</li>
+                                    <li>Activos: 3,240</li>
+                                    <li>Retención: 88%</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- 3 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Ingresos</span>
+                                <span class="metric-count">$45.8K</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-ingresos"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-ingresos">
+                                <ul>
+                                    <li>Producto A: $20K</li>
+                                    <li>Producto B: $15.5K</li>
+                                    <li>Servicios: $10.3K</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- 4 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Descargas</span>
+                                <span class="metric-count">12.3K</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-descargas"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-descargas">
+                                <ul>
+                                    <li>App iOS: 7.1K</li>
+                                    <li>App Android: 5.2K</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- 5 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Tickets</span>
+                                <span class="metric-count">284</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-tickets"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-tickets">
+                                <ul>
+                                    <li>Abiertos: 67</li>
+                                    <li>En curso: 121</li>
+                                    <li>Resueltos: 96</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- 6 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Clientes</span>
+                                <span class="metric-count">842</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-clientes"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-clientes">
+                                <ul>
+                                    <li>Empresas: 110</li>
+                                    <li>Particulares: 732</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- 7 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Subs.</span>
+                                <span class="metric-count">1,120</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-subs"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-subs">
+                                <ul>
+                                    <li>Mensual: 910</li>
+                                    <li>Anual: 210</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- 8 -->
+                        <div class="metric-round">
+                            <div class="metric-circle">
+                                <span class="metric-name">Devoluciones</span>
+                                <span class="metric-count">32</span>
+                                <button class="metric-center-btn" aria-expanded="false" aria-controls="m-devoluciones"
+                                    onclick="toggleRoundMetric(this)">
+                                    <span class="material-icons">expand_more</span>
+                                </button>
+                            </div>
+                            <div class="metric-extra-round" id="m-devoluciones">
+                                <ul>
+                                    <li>Por defecto: 12</li>
+                                    <li>Arrepentimiento: 20</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <!-- Tarjeta alertas emergentes -->
+                <div class="card">
+                    <h2>Botones</h2>
+                    <br>
+                    <!-- Show alert -->
+                    <div class="form-grid grid-3">
+                        <button class="btn btn-aceptar"
+                            onclick="showAlert('success', '¡Operación completada con éxito!')">
+                            Mostrar Success
+                        </button>
+                        <button class="btn btn-cancelar"
+                            onclick="showAlert('error', 'Ha ocurrido un error inesperado.')">
+                            Mostrar Error
+                        </button>
+                        <button class="btn btn-info" onclick="showAlert('info', 'Este es un mensaje informativo.')">
+                            Mostrar Info
+                        </button>
+                    </div>
+                    <br>
+                    <!-- toastify -->
+                    <div class="form-grid grid-3">
+                        <button class="btn btn-aceptar"
+                            onclick="showToast('success', 'Formulario enviado correctamente');">
+                            Mostrar Toast Success
+                        </button>
+                        <button class="btn btn-cancelar" onclick="showToast('error', 'Error al enviar el formulario');">
+                            Mostrar Toast Error
+                        </button>
+                        <button class="btn btn-info" onclick="showToast('info', 'Tenés campos pendientes');">
+                            Mostrar Toast Info
+                        </button>
+                    </div>
+                    <br>
+                    <!-- toastify con boton -->
+                    <div class="form-grid grid-3">
+                        <button class="btn btn-aceptar"
+                            onclick="showToastBoton('success', 'Formulario enviado correctamente');">
+                            Mostrar Toast Success con boton
+                        </button>
+                        <button class="btn btn-cancelar"
+                            onclick="showToastBoton('error', 'Error al enviar el formulario');">
+                            Mostrar Toast Error con boton
+                        </button>
+                        <button class="btn btn-info" onclick="showToastBoton('info', 'Tenés campos pendientes');">
+                            Mostrar Toast Info con boton
+                        </button>
+                    </div>
+                </div>
+
+                <!-- tarjeta de prueba modal -->
+                <div class="card">
+                    <h2>Modales</h2>
+                    <p>Hacé clic en el botón para abrir un modal:</p>
+                    <div class="form-buttons">
+                        <button class="btn btn-info" onclick="openModal()">Abrir modal</button>
+                    </div>
+                </div>
+
+
+                <!-- Varias tarjetas apiladas -->
+                <div class="card" style="background-color: #eee;">
+                    <h2>Distribución de tarjetas</h2>
+                    <div class="card-grid grid-2">
+                        <div class="card">
+                            <h3>Tarjeta 1</h3>
+                            <div class="input-group">
+                                <label for="notificaciones">Switch de ejemplo</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="notificaciones">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3>Tarjeta 2</h3>
+                            <div class="accordion">
+                                <div class="accordion-header" onclick="toggleAccordion(this)">
+                                    <span>Acordeon desplegable</span>
+                                    <span class="material-icons">expand_more</span>
+                                </div>
+                                <div class="accordion-body">
+                                    <!-- Aquí podés poner lo que quieras -->
+                                    <p>Al hacer click, se va a mostrar el contenido dentro de este acordeon</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-grid grid-3">
+                        <div class="card selector-list">
+                            <h3>Selector Multiple</h3>
+                            <hr />
+                            <label>
+                                <input type="checkbox" checked />
+                                <span>Boots</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" />
+                                <span>Clogs</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" checked />
+                                <span>Loafers</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" />
+                                <span>Moccasins</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" checked />
+                                <span>Sneakers</span>
+                            </label>
+                        </div>
+                        <div class="card selector-list">
+                            <h3>Selector simple</h3>
+                            <hr />
+                            <label>
+                                <input type="radio" name="shoes" />
+                                <span>Boots</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="shoes" />
+                                <span>Clogs</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="shoes" />
+                                <span>Loafers</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="shoes" checked />
+                                <span>Moccasins</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="shoes" />
+                                <span>Sneakers</span>
+                            </label>
+                            <small>Option selected: Moccasins</small>
+                        </div>
+
+
+                        <div class="card smart-selector">
+                            <h3>Selector con buscador incorporado</h3>
+                            <hr />
+
+                            <input type="text" class="smart-selector-search" placeholder="Buscar topping...">
+
+                            <div class="smart-selector-list">
+                                <label><input type="checkbox" name="toppings" value="pepperoni"> Pepperoni</label>
+                                <label><input type="checkbox" name="toppings" value="extracheese"> Extra Cheese</label>
+                                <label><input type="checkbox" name="toppings" value="mushroom"> Mushroom</label>
+                                <label><input type="checkbox" name="toppings" value="onion"> Onion</label>
+                                <label><input type="checkbox" name="toppings" value="tomato"> Tomato</label>
+                                <label><input type="checkbox" name="toppings" value="bacon"> Bacon</label>
+                                <label><input type="checkbox" name="toppings" value="olives"> Olives</label>
+                                <label><input type="checkbox" name="toppings" value="spinach"> Spinach</label>
+                                <!-- Agregá más opciones acá -->
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="card-grid grid-4">
+                        <div class="card">
+                            <h3>Tarjeta 1</h3>
+                            <p>Contenido 1</p>
+                        </div>
+                        <div class="card">
+                            <h3>Prueba de Spinner</h3>
+                            <button class="btn btn-info" onclick="probarSpinner()">Proba el Spinner</button>
+                        </div>
+                        <div class="card">
+                            <h3>Tarjeta 3</h3>
+                            <p>Contenido 3</p>
+                        </div>
+                        <div class="card">
+                            <h3>Tarjeta 4</h3>
+                            <p>Proba el tooltip</p>
+                            <!-- tooltip -->
+                            <button class="btn btn-info" data-tooltip="Botón para guardar">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- tabs -->
+                <div class="card">
+                    <h2>Tabulaciones</h2>
+                    <div class="tabs">
+                        <div class="tab-buttons">
+                            <button class="tab-button active" data-tab="tab1">General</button>
+                            <button class="tab-button" data-tab="tab2">Opciones</button>
+                            <button class="tab-button" data-tab="tab3">Avanzado</button>
+                        </div>
+                        <div class="tab-content active" id="tab1">
+                            <p>Contenido de la pestaña General.</p>
+                        </div>
+                        <div class="tab-content" id="tab2">
+                            <p>Contenido de la pestaña Opciones.</p>
+                        </div>
+                        <div class="tab-content" id="tab3">
+                            <p>Contenido de la pestaña Avanzado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- tabs -->
+                <div class="card">
+                    <h2>Tarjetas de usuarios</h2>
+                    <div class="card-grid grid-4">
+                        <div class="user-card">
+                            <h3 class="user-name">NOMBRE USUARIO</h3>
+                            <div class="user-info">
+                                <span class="material-icons icon-email">mail</span>
+                                <span class="user-email">Correo electrónico</span>
+                            </div>
+                            <button class="btn btn-info">Guardar</button>
+                        </div>
+
+                        <div class="user-card">
+                            <h3 class="user-name">NOMBRE USUARIO</h3>
+                            <div class="user-info">
+                                <span class="material-icons icon-email">mail</span>
+                                <span class="user-email">Correo electrónico</span>
+                            </div>
+                            <button class="btn btn-info">Guardar</button>
+                        </div>
+
+                        <div class="user-card">
+                            <h3 class="user-name">NOMBRE USUARIO</h3>
+                            <div class="user-info">
+                                <span class="material-icons icon-email">mail</span>
+                                <span class="user-email">Correo electrónico</span>
+                            </div>
+                            <button class="btn btn-info">Guardar</button>
+                        </div>
+
+                        <div class="user-card">
+                            <h3 class="user-name">NOMBRE USUARIO</h3>
+                            <div class="user-info">
+                                <span class="material-icons icon-email">mail</span>
+                                <span class="user-email">Correo electrónico</span>
+                            </div>
+                            <button class="btn btn-info">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN TRIPLE PARA CREAR PUBLICACIONES Y PREVISUALIZARLAS -->
+                <div class="triple-layout">
+                    <!-- Columna izquierda: categorías -->
+                    <div class="triple-categorias">
+                        <h3>Categorías</h3>
+                        <ul class="accordion-categorias">
+                            <li>
+                                <button class="categoria-btn" onclick="toggleSubcategorias(this)">Electrónica</button>
+                                <ul class="subcategorias">
+                                    <li>Celulares</li>
+                                    <li>TVs</li>
+                                    <li>Audio</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <button class="categoria-btn" onclick="toggleSubcategorias(this)">Moda</button>
+                                <ul class="subcategorias">
+                                    <li>Hombre</li>
+                                    <li>Mujer</li>
+                                    <li>Niños</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <button class="categoria-btn" onclick="toggleSubcategorias(this)">Hogar</button>
+                                <ul class="subcategorias">
+                                    <li>Cocina</li>
+                                    <li>Deco</li>
+                                    <li>Muebles</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <button class="categoria-btn" onclick="toggleSubcategorias(this)">Juguetes</button>
+                                <ul class="subcategorias">
+                                    <li>Muñecos</li>
+                                    <li>Didácticos</li>
+                                    <li>Exterior</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <button class="categoria-btn" onclick="toggleSubcategorias(this)">Libros</button>
+                                <ul class="subcategorias">
+                                    <li>Infantiles</li>
+                                    <li>Novelas</li>
+                                    <li>Técnicos</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+
+                    <!-- 📝 Formulario para nueva publicación -->
+                    <div class="triple-derecha">
+                        <div class="triple-form">
+                            <h3>Publicar nueva entrada</h3>
+                            <form class="form-grid grid-4" id="form-publicacion" enctype="multipart/form-data">
+                                <!-- Título -->
+                                <div class="input-group">
+                                    <label for="titulo">Título</label>
+                                    <div class="input-icon">
+                                        <span class="material-icons">title</span>
+                                        <input type="text" name="titulo" id="titulo" required>
+                                    </div>
+                                </div>
+
+                                <!-- Subtítulo -->
+                                <div class="input-group">
+                                    <label for="subtitulo">Subtítulo</label>
+                                    <div class="input-icon">
+                                        <span class="material-icons">subtitles</span>
+                                        <input type="text" name="subtitulo" id="subtitulo" required>
+                                    </div>
+                                </div>
+
+                                <!-- Autor -->
+                                <div class="input-group">
+                                    <label for="autor">Autor</label>
+                                    <div class="input-icon">
+                                        <span class="material-icons">person</span>
+                                        <input type="text" name="autor" id="autor" required>
+                                    </div>
+                                </div>
+
+                                <!-- Archivo -->
+                                <div class="input-group">
+                                    <label for="archivo">Archivo</label>
+                                    <div class="input-icon">
+                                        <span class="material-icons">attach_file</span>
+                                        <input type="file" name="archivo" id="archivo" accept=".pdf">
+                                    </div>
+                                </div>
+
+                                <!-- Descripción -->
+                                <div class="input-group" style="grid-column: span 4;">
+                                    <label for="descripcion">Descripción</label>
+                                    <textarea name="descripcion" id="descripcion" rows="4"
+                                        placeholder="Descripción de la publicación..." required></textarea>
+                                </div>
+
+                                <!-- Botón guardar -->
+                                <div style="grid-column: span 4; text-align: right;">
+                                    <button type="submit" class="btn btn-disabled" id="btn-guardar" disabled>Guardar
+                                        publicación</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Fila inferior: tarjetas -->
+                        <div class="triple-tarjetas card-grid grid-3">
+                            <div class="product-card">
+                                <div class="product-header">
+                                    <h4>Titulo</h4>
+                                    <p>Subtitulo</p>
+                                </div>
+                                <div class="product-body">
+                                    <div class="user-info">
+                                        <span class="material-icons avatar download-icon">download</span>
+                                        <div>
+                                            <strong>Autor</strong>
+                                            <div class="role">Fecha de publicación</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Descripción -->
+                                    <p class="description">
+                                        Esta es una descripción resumida de la publicación que se mostrará en la
+                                        tarjeta. Solo se mostrarán las
+                                        primeras líneas.
+                                    </p>
+
+                                    <hr />
+
+                                    <div class="product-footer">
+                                        <div class="metric">
+                                            <strong>245</strong>
+                                            <span>Vistas</span>
+                                        </div>
+                                        <div class="metric">
+                                            <strong>1085</strong>
+                                            <span>Descargas</span>
+                                        </div>
+                                        <button class="btn-view">Ver publicación</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <!-- Alert -->
+                <div class="alert-container" id="alertContainer"></div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Spinner Global -->
+    <div id="globalSpinner" class="spinner-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Título del modal</h3>
+            <p>Este es un ejemplo de modal simple y responsive.</p>
+            <div class="form-buttons">
+                <button class="btn btn-aceptar" onclick="closeModal()">Aceptar</button>
+                <button class="btn btn-cancelar" onclick="closeModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Framework JS -->
+    <script src="./framework.js"></script>
+
+    <!-- Spinner Global -->
+    <script src="https://www.fernandosalguero.com/cdn/components/spinner-global.js"></script>
+
+    <!-- Funcion para probar el spinner -->
+    <script>
+        function probarSpinner() {
+            showSpinner();
+
+            // Simula una petición con un timeout de 3 segundos
+            setTimeout(() => {
+                hideSpinner();
+            }, 3000);
+        }
+    </script>
+</body>
+<div id="toast-container"></div>
+<div id="toast-container-boton"></div>
+
+</html>
