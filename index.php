@@ -19,8 +19,8 @@ function redirigirPorRol(string $rol): void
         exit;
     }
 
-    if ($rol === 'impulsa_emprendedor') {
-        header('Location: /views/emprendedor/emprendedor_dashboard.php');
+    if ($rol === 'impulsa_jurado') {
+        header('Location: /views/jurado/jurado_dashboard.php');
         exit;
     }
 
@@ -28,39 +28,77 @@ function redirigirPorRol(string $rol): void
     exit;
 }
 
+function iniciarSesionUsuario(array $auth): void
+{
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = (int) $auth['id'];
+    $_SESSION['usuario'] = (string) $auth['usuario'];
+    $_SESSION['correo'] = (string) $auth['usuario'];
+    $_SESSION['rol'] = (string) $auth['rol'];
+}
+
 if (isset($_SESSION['user_id'], $_SESSION['rol'])) {
     redirigirPorRol((string) $_SESSION['rol']);
 }
 
 $error = '';
+$usuario = '';
+$mostrarAccesoAdmin = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario = trim((string) ($_POST['usuario'] ?? ''));
     $contrasena = (string) ($_POST['contrasena'] ?? '');
     $codigoAcceso = trim((string) ($_POST['codigo_acceso'] ?? ''));
 
-    if ($usuario === '' || $contrasena === '' || $codigoAcceso === '') {
-        $error = 'Completá usuario, contraseña y código de acceso.';
-    } else {
-        $sql = 'SELECT id, usuario, contrasena, codigo_acceso, rol FROM auth WHERE usuario = :usuario LIMIT 1';
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(['usuario' => $usuario]);
-        $auth = $stmt->fetch(PDO::FETCH_ASSOC);
+    $quiereIngresarComoAdmin = $usuario !== '' || $contrasena !== '';
 
-        $credencialesValidas =
-            $auth &&
-            password_verify($contrasena, (string) $auth['contrasena']) &&
-            password_verify($codigoAcceso, (string) $auth['codigo_acceso']);
+    if ($quiereIngresarComoAdmin) {
+        $mostrarAccesoAdmin = true;
 
-        if (!$credencialesValidas) {
-            $error = 'Credenciales inválidas.';
+        if ($usuario === '' || $contrasena === '') {
+            $error = 'Para ingresar como administrador completá usuario y contraseña.';
         } else {
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = (int) $auth['id'];
-            $_SESSION['correo'] = (string) $auth['usuario'];
-            $_SESSION['rol'] = (string) ($auth['rol'] ?: 'impulsa_emprendedor');
+            $sql = 'SELECT id, usuario, contrasena, rol FROM auth WHERE usuario = :usuario AND rol = :rol LIMIT 1';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                'usuario' => $usuario,
+                'rol' => 'impulsa_administrador',
+            ]);
+            $auth = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            redirigirPorRol($_SESSION['rol']);
+            $credencialesValidas =
+                $auth &&
+                password_verify($contrasena, (string) $auth['contrasena']);
+
+            if (!$credencialesValidas) {
+                $error = 'Usuario o contraseña inválidos.';
+            } else {
+                iniciarSesionUsuario($auth);
+                redirigirPorRol($_SESSION['rol']);
+            }
+        }
+    } else {
+        if ($codigoAcceso === '') {
+            $error = 'Ingresá un código de acceso válido.';
+        } else {
+            $stmt = $pdo->prepare('SELECT id, usuario, codigo_acceso, rol FROM auth WHERE rol = :rol');
+            $stmt->execute(['rol' => 'impulsa_jurado']);
+            $jurados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $juradoValido = null;
+            foreach ($jurados as $jurado) {
+                if (password_verify($codigoAcceso, (string) $jurado['codigo_acceso'])) {
+                    $juradoValido = $jurado;
+                    break;
+                }
+            }
+
+            if ($juradoValido === null) {
+                $error = 'Código de acceso inválido.';
+            } else {
+                iniciarSesionUsuario($juradoValido);
+                redirigirPorRol($_SESSION['rol']);
+            }
         }
     }
 }
@@ -84,10 +122,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .login-card {
-            max-width: 420px;
+            max-width: 460px;
             border: 0;
             border-radius: 1rem;
             box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+        }
+
+        .access-toggle {
+            width: 52px;
+            height: 52px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .admin-access-box {
+            background: #f8fafc;
+            border: 1px solid #dbeafe;
+            border-radius: 0.9rem;
+            padding: 1rem;
+        }
+
+        .divider-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
         }
     </style>
 </head>
@@ -97,8 +159,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-body p-4 p-md-5">
             <div class="text-center mb-4">
                 <i class="bi bi-shield-lock fs-1 text-primary"></i>
-                <h1 class="h4 mt-2 mb-1">Iniciar sesión</h1>
-                <p class="text-secondary mb-0">Acceso al sistema</p>
+                <h1 class="h4 mt-2 mb-1">Acceso al sistema</h1>
+                <p class="text-secondary mb-0">Jurado por código. Administrador por usuario y contraseña.</p>
             </div>
 
             <?php if ($error !== ''): ?>
@@ -108,27 +170,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" autocomplete="off" novalidate>
-                <div class="mb-3">
-                    <label for="usuario" class="form-label">Usuario</label>
-                    <input
-                        type="text"
-                        class="form-control"
-                        id="usuario"
-                        name="usuario"
-                        required
-                        value="<?= isset($usuario) ? htmlspecialchars($usuario, ENT_QUOTES, 'UTF-8') : '' ?>">
-                </div>
-
-                <div class="mb-3">
-                    <label for="contrasena" class="form-label">Contraseña</label>
-                    <input
-                        type="password"
-                        class="form-control"
-                        id="contrasena"
-                        name="contrasena"
-                        required>
-                </div>
-
                 <div class="mb-4">
                     <label for="codigo_acceso" class="form-label">Código de acceso</label>
                     <input
@@ -136,7 +177,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         class="form-control"
                         id="codigo_acceso"
                         name="codigo_acceso"
-                        required>
+                        placeholder="Ingresá tu código"
+                        value="">
+                </div>
+
+                <div class="text-center mb-3">
+                    <div class="divider-label mb-2">Acceso administrador</div>
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary access-toggle"
+                        id="toggleAdminAccess"
+                        aria-expanded="<?= $mostrarAccesoAdmin ? 'true' : 'false' ?>"
+                        aria-controls="adminAccessFields"
+                        title="Mostrar acceso administrador">
+                        <i class="bi bi-person-lock"></i>
+                    </button>
+                </div>
+
+                <div class="<?= $mostrarAccesoAdmin ? '' : 'd-none' ?>" id="adminAccessFields">
+                    <div class="admin-access-box mb-4">
+                        <div class="mb-3">
+                            <label for="usuario" class="form-label">Usuario</label>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="usuario"
+                                name="usuario"
+                                value="<?= htmlspecialchars($usuario, ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+
+                        <div class="mb-0">
+                            <label for="contrasena" class="form-label">Contraseña</label>
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="contrasena"
+                                name="contrasena">
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100">
@@ -146,9 +224,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
+    <script>
+        const toggleButton = document.getElementById('toggleAdminAccess');
+        const adminFields = document.getElementById('adminAccessFields');
+
+        toggleButton.addEventListener('click', () => {
+            adminFields.classList.toggle('d-none');
+            const expanded = !adminFields.classList.contains('d-none');
+            toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        });
+    </script>
 </body>
 
 </html>
