@@ -19,10 +19,140 @@ function authTieneColumna(PDO $pdo, string $columna): bool
     }
 }
 
+function tablaExiste(PDO $pdo, string $tabla): bool
+{
+    try {
+        $stmt = $pdo->prepare("SHOW TABLES LIKE :tabla");
+        $stmt->execute(['tabla' => $tabla]);
+        return (bool) $stmt->fetch(PDO::FETCH_NUM);
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+function normalizarUsuarioBase(string $texto): string
+{
+    $texto = trim($texto);
+    if ($texto === '') {
+        return 'jurado';
+    }
+
+    $transliterado = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+    if ($transliterado !== false) {
+        $texto = $transliterado;
+    }
+
+    $texto = strtolower($texto);
+    $texto = preg_replace('/[^a-z0-9]+/', '_', $texto) ?? 'jurado';
+    $texto = trim($texto, '_');
+
+    return $texto !== '' ? $texto : 'jurado';
+}
+
+function generarUsuarioUnico(PDO $pdo, string $nombre): string
+{
+    $base = normalizarUsuarioBase($nombre);
+    $candidato = $base;
+    $indice = 1;
+
+    $stmt = $pdo->prepare('SELECT id FROM auth WHERE usuario = :usuario LIMIT 1');
+
+    while (true) {
+        $stmt->execute(['usuario' => $candidato]);
+        $existe = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$existe) {
+            return $candidato;
+        }
+
+        $indice++;
+        $candidato = $base . '_' . $indice;
+    }
+}
+
 $tieneAccesoHabilitado = authTieneColumna($pdo, 'acceso_habilitado');
 $tieneCodigoVisible = authTieneColumna($pdo, 'codigo_acceso_visible');
+$tieneTablaInformacionUsuarios = tablaExiste($pdo, 'informacion_usuarios');
 $mensaje = '';
 $mensajeTipo = 'success';
+$mostrarModalJurado = false;
+$nombreNuevoJurado = '';
+$codigoNuevoJurado = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_jurado'])) {
+    $mostrarModalJurado = true;
+    $nombreNuevoJurado = trim((string) ($_POST['nombre_jurado'] ?? ''));
+    $codigoNuevoJurado = trim((string) ($_POST['codigo_acceso_jurado'] ?? ''));
+
+    if (!$tieneTablaInformacionUsuarios) {
+        $mensaje = 'Falta la tabla informacion_usuarios. Primero ejecutá la migración SQL.';
+        $mensajeTipo = 'danger';
+    } elseif ($nombreNuevoJurado === '' || $codigoNuevoJurado === '') {
+        $mensaje = 'Completá nombre y código de acceso para crear el jurado.';
+        $mensajeTipo = 'danger';
+    } else {
+        try {
+            $pdo->beginTransaction();
+
+            $usuarioGenerado = generarUsuarioUnico($pdo, $nombreNuevoJurado);
+            $passwordDummy = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
+            $codigoHash = password_hash($codigoNuevoJurado, PASSWORD_DEFAULT);
+
+            $columnasAuth = ['usuario', 'contrasena', 'codigo_acceso', 'rol'];
+            $placeholdersAuth = [':usuario', ':contrasena', ':codigo_acceso', ':rol'];
+            $paramsAuth = [
+                'usuario' => $usuarioGenerado,
+                'contrasena' => $passwordDummy,
+                'codigo_acceso' => $codigoHash,
+                'rol' => 'impulsa_jurado',
+            ];
+
+            if ($tieneCodigoVisible) {
+                $columnasAuth[] = 'codigo_acceso_visible';
+                $placeholdersAuth[] = ':codigo_acceso_visible';
+                $paramsAuth['codigo_acceso_visible'] = $codigoNuevoJurado;
+            }
+
+            if ($tieneAccesoHabilitado) {
+                $columnasAuth[] = 'acceso_habilitado';
+                $placeholdersAuth[] = ':acceso_habilitado';
+                $paramsAuth['acceso_habilitado'] = 1;
+            }
+
+            $sqlInsertAuth = sprintf(
+                'INSERT INTO auth (%s) VALUES (%s)',
+                implode(', ', $columnasAuth),
+                implode(', ', $placeholdersAuth)
+            );
+
+            $stmtInsertAuth = $pdo->prepare($sqlInsertAuth);
+            $stmtInsertAuth->execute($paramsAuth);
+
+            $nuevoUserId = (int) $pdo->lastInsertId();
+
+            $stmtInsertInfo = $pdo->prepare(
+                'INSERT INTO informacion_usuarios (user_auth_id, nombre)
+                 VALUES (:user_auth_id, :nombre)'
+            );
+            $stmtInsertInfo->execute([
+                'user_auth_id' => $nuevoUserId,
+                'nombre' => $nombreNuevoJurado,
+            ]);
+
+            $pdo->commit();
+            $mensaje = 'Jurado creado correctamente.';
+            $mensajeTipo = 'success';
+            $mostrarModalJurado = false;
+            $nombreNuevoJurado = '';
+            $codigoNuevoJurado = '';
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $mensaje = 'No se pudo crear el jurado.';
+            $mensajeTipo = 'danger';
+        }
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_acceso_usuario_id']) && $tieneAccesoHabilitado) {
     $usuarioId = (int) $_POST['toggle_acceso_usuario_id'];
@@ -56,11 +186,18 @@ $selectUsuarios .= " FROM auth ORDER BY creado_en DESC, id DESC";
 $stmtUsuarios = $pdo->query($selectUsuarios);
 $usuarios = $stmtUsuarios ? $stmtUsuarios->fetchAll(PDO::FETCH_ASSOC) : [];
 
-$selectJurados = "SELECT id, usuario, rol";
+$selectJurados = "SELECT a.id, a.usuario, a.rol";
 if ($tieneCodigoVisible) {
-    $selectJurados .= ", codigo_acceso_visible";
+    $selectJurados .= ", a.codigo_acceso_visible";
 }
-$selectJurados .= " FROM auth WHERE rol = 'impulsa_jurado' ORDER BY creado_en DESC, id DESC";
+if ($tieneTablaInformacionUsuarios) {
+    $selectJurados .= ", iu.nombre";
+}
+$selectJurados .= " FROM auth a";
+if ($tieneTablaInformacionUsuarios) {
+    $selectJurados .= " LEFT JOIN informacion_usuarios iu ON iu.user_auth_id = a.id";
+}
+$selectJurados .= " WHERE a.rol = 'impulsa_jurado' ORDER BY a.creado_en DESC, a.id DESC";
 
 $stmtJurados = $pdo->query($selectJurados);
 $jurados = $stmtJurados ? $stmtJurados->fetchAll(PDO::FETCH_ASSOC) : [];
@@ -522,6 +659,146 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             word-break: break-all;
         }
 
+        .section-header-inline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .section-header-inline .section-title {
+            margin-bottom: 0;
+        }
+
+        .add-jurado-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #dbeafe;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.48);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 120;
+        }
+
+        .modal-backdrop[hidden] {
+            display: none;
+        }
+
+        .modal-card {
+            width: min(100%, 460px);
+            background: #fff;
+            border-radius: 20px;
+            border: 1px solid var(--admin-border);
+            box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+            padding: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            margin: 0 0 4px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #202633;
+        }
+
+        .modal-copy {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--admin-muted);
+            line-height: 1.45;
+        }
+
+        .modal-close {
+            border: 0;
+            background: #f8fafc;
+            color: #475569;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .form-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .form-field input {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #dbe3f0;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 0.92rem;
+            color: #0f172a;
+            background: #fff;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .btn-secondary-modal,
+        .btn-primary-modal {
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-secondary-modal {
+            border: 1px solid #dbe3f0;
+            background: #fff;
+            color: #334155;
+        }
+
+        .btn-primary-modal {
+            border: 1px solid #2563eb;
+            background: #2563eb;
+            color: #fff;
+        }
+
         body.sidebar-collapsed .sidebar {
             width: var(--sidebar-collapsed-width);
         }
@@ -604,6 +881,16 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                 font-size: 13px;
             }
 
+            .section-header-inline {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .add-jurado-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
             .logout-link span:last-child {
                 display: none;
             }
@@ -611,6 +898,15 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             .jurado-item-header {
                 flex-direction: column;
                 align-items: flex-start;
+            }
+
+            .modal-actions {
+                flex-direction: column-reverse;
+            }
+
+            .btn-secondary-modal,
+            .btn-primary-modal {
+                width: 100%;
             }
         }
     </style>
@@ -758,7 +1054,13 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                         </div>
 
                         <aside class="panel-card">
-                            <h2 class="section-title">Jurados registrados</h2>
+                            <div class="section-header-inline">
+                                <h2 class="section-title">Jurados registrados</h2>
+                                <button type="button" class="add-jurado-btn" id="openJuradoModalBtn">
+                                    <span class="material-icons">person_add</span>
+                                    <span>Añadir jurado</span>
+                                </button>
+                            </div>
                             <p class="section-caption">Listado de usuarios con rol <code>impulsa_jurado</code>.</p>
 
                             <?php if (!$tieneCodigoVisible): ?>
@@ -772,8 +1074,13 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                     <?php foreach ($jurados as $jurado): ?>
                                         <div class="jurado-item">
                                             <div class="jurado-item-header">
-                                                <div class="jurado-name"><?= htmlspecialchars((string) $jurado['usuario'], ENT_QUOTES, 'UTF-8') ?></div>
+                                                <div class="jurado-name">
+                                                    <?= htmlspecialchars((string) ($jurado['nombre'] ?? $jurado['usuario']), ENT_QUOTES, 'UTF-8') ?>
+                                                </div>
                                                 <span class="role-pill role-jurado">impulsa_jurado</span>
+                                            </div>
+                                            <div class="jurado-code-note" style="margin-bottom:8px;">
+                                                Usuario: <?= htmlspecialchars((string) $jurado['usuario'], ENT_QUOTES, 'UTF-8') ?>
                                             </div>
                                             <div class="jurado-code">
                                                 <?= $tieneCodigoVisible
@@ -794,6 +1101,52 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         </div>
     </div>
 
+    <div class="modal-backdrop" id="juradoModal" <?= $mostrarModalJurado ? '' : 'hidden' ?>>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="juradoModalTitle">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="juradoModalTitle">Añadir jurado</h3>
+                    <p class="modal-copy">Completá el nombre y el código de acceso. El usuario se genera automáticamente.</p>
+                </div>
+                <button type="button" class="modal-close" id="closeJuradoModalBtn" aria-label="Cerrar modal">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+
+            <form method="post">
+                <input type="hidden" name="crear_jurado" value="1">
+                <div class="form-stack">
+                    <div class="form-field">
+                        <label for="nombre_jurado">Nombre</label>
+                        <input
+                            type="text"
+                            id="nombre_jurado"
+                            name="nombre_jurado"
+                            value="<?= htmlspecialchars($nombreNuevoJurado, ENT_QUOTES, 'UTF-8') ?>"
+                            autocomplete="off"
+                            required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="codigo_acceso_jurado">Código de acceso</label>
+                        <input
+                            type="text"
+                            id="codigo_acceso_jurado"
+                            name="codigo_acceso_jurado"
+                            value="<?= htmlspecialchars($codigoNuevoJurado, ENT_QUOTES, 'UTF-8') ?>"
+                            autocomplete="off"
+                            required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-modal" id="cancelJuradoModalBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary-modal">Guardar jurado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const body = document.body;
         const sidebar = document.getElementById('sidebar');
@@ -801,6 +1154,18 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         const collapseIcon = document.getElementById('collapseIcon');
         const toggleSidebarButton = document.getElementById('toggleSidebarBtn');
         const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
+        const juradoModal = document.getElementById('juradoModal');
+        const openJuradoModalBtn = document.getElementById('openJuradoModalBtn');
+        const closeJuradoModalBtn = document.getElementById('closeJuradoModalBtn');
+        const cancelJuradoModalBtn = document.getElementById('cancelJuradoModalBtn');
+
+        function openJuradoModal() {
+            juradoModal?.removeAttribute('hidden');
+        }
+
+        function closeJuradoModal() {
+            juradoModal?.setAttribute('hidden', 'hidden');
+        }
 
         function syncSidebarState() {
             if (mobileBreakpoint.matches) {
@@ -849,6 +1214,22 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         mobileBreakpoint.addEventListener('change', () => {
             body.classList.remove('sidebar-open');
             syncSidebarState();
+        });
+
+        openJuradoModalBtn?.addEventListener('click', openJuradoModal);
+        closeJuradoModalBtn?.addEventListener('click', closeJuradoModal);
+        cancelJuradoModalBtn?.addEventListener('click', closeJuradoModal);
+
+        juradoModal?.addEventListener('click', (event) => {
+            if (event.target === juradoModal) {
+                closeJuradoModal();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeJuradoModal();
+            }
         });
 
         function lockFrameworkTheme() {
