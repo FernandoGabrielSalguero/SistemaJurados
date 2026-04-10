@@ -75,8 +75,13 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         .group-title { margin:0; font-size:1.08rem; font-weight:800; color:#202633; }
         .group-meta { color:var(--muted); font-size:.9rem; margin-top:4px; }
         .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:16px; }
-        .details-list { display:flex; flex-wrap:wrap; gap:8px; }
-        .detail-chip { display:inline-flex; align-items:center; border-radius:999px; background:#eef4ff; color:#2457cc; padding:6px 10px; font-size:.76rem; font-weight:700; }
+        .competitors-stack { display:flex; flex-direction:column; gap:16px; }
+        .competitor-card { border:1px solid var(--border); border-radius:18px; background:#fbfdff; overflow:hidden; }
+        .competitor-header { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; padding:16px 18px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%); }
+        .competitor-title { margin:0; font-size:1rem; font-weight:800; color:#202633; }
+        .competitor-meta { color:var(--muted); font-size:.88rem; margin-top:4px; }
+        .competitor-stats { display:flex; flex-wrap:wrap; gap:10px; }
+        .stat-chip { display:inline-flex; align-items:center; border-radius:999px; background:#eef4ff; color:#2457cc; padding:7px 11px; font-size:.76rem; font-weight:700; }
         .table-responsive { border:1px solid var(--border); border-radius:16px; overflow-x:auto; }
         .table { width:100%; min-width:1180px; border-collapse:collapse; }
         .table thead th { background:#f8fafc; color:#5b6472; border-bottom:1px solid var(--border); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; padding:12px 14px; text-align:left; }
@@ -198,49 +203,75 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                                     <div class="summary-card"><div class="summary-label">Promedio general</div><div class="summary-value"><?= htmlspecialchars(number_format((float) ($grupo['promedio_general'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></div></div>
                                 </div>
 
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Jurado</th>
-                                                <th>Competidor</th>
-                                                <th>Evento</th>
-                                                <th>Categoria</th>
-                                                <th>Puntaje total</th>
-                                                <th>Promedio</th>
-                                                <th>Detalle completo</th>
-                                                <th>Fecha</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach (($grupo['evaluaciones'] ?? []) as $evaluacion): ?>
-                                                <tr>
-                                                    <td><?= (int) ($evaluacion['id'] ?? 0) ?></td>
-                                                    <td><?= htmlspecialchars((string) ($evaluacion['jurado_display'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                    <td>
-                                                        <strong>#<?= htmlspecialchars((string) ($evaluacion['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br>
-                                                        <span class="section-caption"><?= htmlspecialchars((string) ($evaluacion['competidor_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                                    </td>
-                                                    <td><?= htmlspecialchars((string) ($evaluacion['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                    <td><?= htmlspecialchars((string) ($evaluacion['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                    <td><strong><?= htmlspecialchars(number_format((float) ($evaluacion['puntaje_total'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
-                                                    <td><?= htmlspecialchars(number_format((float) ($evaluacion['promedio'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                    <td>
-                                                        <div class="details-list">
-                                                            <?php foreach (($evaluacion['detalles'] ?? []) as $detalle): ?>
-                                                                <span class="detail-chip">
-                                                                    <?= htmlspecialchars((string) ($detalle['criterio_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>:
-                                                                    <?= htmlspecialchars(number_format((float) ($detalle['puntaje_otorgado'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>/<?= htmlspecialchars(number_format((float) ($detalle['puntaje_maximo'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>
-                                                                </span>
+                                <div class="competitors-stack">
+                                    <?php foreach (($grupo['competidores_detalle'] ?? []) as $competidor): ?>
+                                        <article class="competitor-card">
+                                            <div class="competitor-header">
+                                                <div>
+                                                    <h3 class="competitor-title">Competidor #<?= htmlspecialchars((string) ($competidor['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+                                                    <div class="competitor-meta">
+                                                        Nombre principal: <strong><?= htmlspecialchars((string) ($competidor['nombre_mostrar'] ?? 'Sin nombre'), ENT_QUOTES, 'UTF-8') ?></strong>
+                                                        <?php if (!empty($competidor['nombres']) && count($competidor['nombres']) > 1): ?>
+                                                            | Variantes cargadas: <?= htmlspecialchars(implode(' | ', $competidor['nombres']), ENT_QUOTES, 'UTF-8') ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                                <div class="competitor-stats">
+                                                    <span class="stat-chip">Evaluaciones: <?= (int) ($competidor['total_evaluaciones'] ?? 0) ?></span>
+                                                    <span class="stat-chip">Promedio total: <?= htmlspecialchars(number_format((float) ($competidor['promedio_general'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="table-responsive">
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Jurado</th>
+                                                            <th>Nombre cargado</th>
+                                                            <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
+                                                                <th><?= htmlspecialchars((string) ($criterio['criterio_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></th>
                                                             <?php endforeach; ?>
-                                                        </div>
-                                                    </td>
-                                                    <td><?= htmlspecialchars((string) ($evaluacion['creado_en'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
+                                                            <th>Total</th>
+                                                            <th>Promedio</th>
+                                                            <th>Fecha</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php foreach (($competidor['evaluaciones'] ?? []) as $evaluacion): ?>
+                                                            <?php
+                                                            $detallesIndexados = [];
+                                                            foreach (($evaluacion['detalles'] ?? []) as $detalle) {
+                                                                $detallesIndexados[(string) ($detalle['criterio_clave'] ?? '')] = $detalle;
+                                                            }
+                                                            ?>
+                                                            <tr>
+                                                                <td><?= (int) ($evaluacion['id'] ?? 0) ?></td>
+                                                                <td><?= htmlspecialchars((string) ($evaluacion['jurado_display'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                                <td><?= htmlspecialchars((string) ($evaluacion['competidor_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                                <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
+                                                                    <?php
+                                                                    $criterioClave = (string) ($criterio['criterio_clave'] ?? '');
+                                                                    $detalle = $detallesIndexados[$criterioClave] ?? null;
+                                                                    ?>
+                                                                    <td>
+                                                                        <?php if ($detalle): ?>
+                                                                            <?= htmlspecialchars(number_format((float) ($detalle['puntaje_otorgado'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>/<?= htmlspecialchars(number_format((float) ($detalle['puntaje_maximo'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>
+                                                                        <?php else: ?>
+                                                                            -
+                                                                        <?php endif; ?>
+                                                                    </td>
+                                                                <?php endforeach; ?>
+                                                                <td><strong><?= htmlspecialchars(number_format((float) ($evaluacion['puntaje_total'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                                                <td><?= htmlspecialchars(number_format((float) ($evaluacion['promedio'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                                <td><?= htmlspecialchars((string) ($evaluacion['creado_en'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </article>
+                                    <?php endforeach; ?>
                                 </div>
                             </section>
                         <?php endforeach; ?>

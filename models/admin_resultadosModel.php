@@ -164,6 +164,8 @@ class AdminResultadosModel
                     'categoria' => (string) $evaluacion['categoria'],
                     'evento_nombre' => (string) $evaluacion['evento_nombre'],
                     'evaluaciones' => [],
+                    'competidores_detalle' => [],
+                    'criterios' => [],
                     'total_evaluaciones' => 0,
                     'competidores' => [],
                     'jurados' => [],
@@ -182,6 +184,44 @@ class AdminResultadosModel
             $agrupados[$groupKey]['puntaje_acumulado'] += (float) ($evaluacion['puntaje_total'] ?? 0);
             $agrupados[$groupKey]['competidores'][(string) $evaluacion['competidor_numero'] . '|' . (string) $evaluacion['competidor_nombre']] = true;
             $agrupados[$groupKey]['jurados'][(string) $evaluacion['jurado_id']] = true;
+
+            $competidorNumero = trim((string) ($evaluacion['competidor_numero'] ?? ''));
+            if ($competidorNumero === '') {
+                $competidorNumero = 'Sin numero';
+            }
+
+            if (!isset($agrupados[$groupKey]['competidores_detalle'][$competidorNumero])) {
+                $agrupados[$groupKey]['competidores_detalle'][$competidorNumero] = [
+                    'competidor_numero' => $competidorNumero,
+                    'nombres' => [],
+                    'evaluaciones' => [],
+                    'puntaje_acumulado' => 0.0,
+                    'total_evaluaciones' => 0,
+                ];
+            }
+
+            $nombreCompetidor = trim((string) ($evaluacion['competidor_nombre'] ?? ''));
+            if ($nombreCompetidor !== '') {
+                $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['nombres'][$nombreCompetidor] = true;
+            }
+
+            $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['evaluaciones'][] = $evaluacion;
+            $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['puntaje_acumulado'] += (float) ($evaluacion['puntaje_total'] ?? 0);
+            $agrupados[$groupKey]['competidores_detalle'][$competidorNumero]['total_evaluaciones']++;
+
+            foreach ($evaluacion['detalles'] as $detalle) {
+                $criterioClave = (string) ($detalle['criterio_clave'] ?? '');
+                if ($criterioClave === '') {
+                    continue;
+                }
+
+                if (!isset($agrupados[$groupKey]['criterios'][$criterioClave])) {
+                    $agrupados[$groupKey]['criterios'][$criterioClave] = [
+                        'criterio_clave' => $criterioClave,
+                        'criterio_nombre' => (string) ($detalle['criterio_nombre'] ?? ''),
+                    ];
+                }
+            }
         }
 
         $resultado = [];
@@ -191,7 +231,40 @@ class AdminResultadosModel
             $grupo['promedio_general'] = $grupo['total_evaluaciones'] > 0
                 ? round($grupo['puntaje_acumulado'] / $grupo['total_evaluaciones'], 2)
                 : 0.0;
-            unset($grupo['competidores'], $grupo['jurados'], $grupo['puntaje_acumulado']);
+
+            $competidoresOrdenados = array_values($grupo['competidores_detalle']);
+            usort(
+                $competidoresOrdenados,
+                static function (array $a, array $b): int {
+                    return strnatcasecmp((string) $a['competidor_numero'], (string) $b['competidor_numero']);
+                }
+            );
+
+            foreach ($competidoresOrdenados as &$competidor) {
+                $competidor['nombres'] = array_keys($competidor['nombres']);
+                $competidor['nombre_mostrar'] = $competidor['nombres'][0] ?? 'Sin nombre';
+                $competidor['promedio_general'] = $competidor['total_evaluaciones'] > 0
+                    ? round($competidor['puntaje_acumulado'] / $competidor['total_evaluaciones'], 2)
+                    : 0.0;
+
+                usort(
+                    $competidor['evaluaciones'],
+                    static function (array $a, array $b): int {
+                        return strcmp((string) ($a['creado_en'] ?? ''), (string) ($b['creado_en'] ?? ''));
+                    }
+                );
+            }
+            unset($competidor);
+
+            $grupo['competidores_detalle'] = $competidoresOrdenados;
+            $grupo['criterios'] = array_values($grupo['criterios']);
+
+            unset(
+                $grupo['competidores'],
+                $grupo['jurados'],
+                $grupo['puntaje_acumulado'],
+                $grupo['evaluaciones']
+            );
             $resultado[] = $grupo;
         }
 
