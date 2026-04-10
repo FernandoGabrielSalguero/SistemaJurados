@@ -153,7 +153,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                     </section>
 
                     <section class="metrics-grid">
-                        <article class="metric-card"><div class="metric-label">Grupos visibles</div><div class="metric-value"><?= (int) $metricas['grupos'] ?></div><div class="metric-help">Combinaciones de formulario y categoria.</div></article>
+                        <article class="metric-card"><div class="metric-label">Grupos visibles</div><div class="metric-value"><?= (int) $metricas['grupos'] ?></div><div class="metric-help">Combinaciones de subcategoria y categoria.</div></article>
                         <article class="metric-card"><div class="metric-label">Evaluaciones</div><div class="metric-value"><?= (int) $metricas['evaluaciones'] ?></div><div class="metric-help">Registros cargados por los jurados.</div></article>
                         <article class="metric-card"><div class="metric-label">Competidores</div><div class="metric-value"><?= (int) $metricas['competidores'] ?></div><div class="metric-help">Competidores distintos en la consulta actual.</div></article>
                         <article class="metric-card"><div class="metric-label">Jurados</div><div class="metric-value"><?= (int) $metricas['jurados'] ?></div><div class="metric-help">Jurados que participaron en estos resultados.</div></article>
@@ -161,15 +161,15 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
 
                     <section class="panel-card">
                         <h2 class="section-title">Filtros</h2>
-                        <p class="section-caption">Podes consultar todos los resultados o acotar la vista por formulario y categoria.</p>
+                        <p class="section-caption">Podes consultar todos los resultados o acotar la vista por subcategoria y categoria.</p>
                         <form method="get" class="filters-grid">
                             <div class="form-field">
-                                <label for="formulario_id">Formulario</label>
+                                <label for="formulario_id">Subcategoria</label>
                                 <select id="formulario_id" name="formulario_id">
-                                    <option value="0">Todos los formularios</option>
+                                    <option value="0">Todas las subcategorias</option>
                                     <?php foreach (($filtrosDisponibles['formularios'] ?? []) as $formulario): ?>
                                         <option value="<?= (int) ($formulario['id'] ?? 0) ?>" <?= $filtroFormularioId === (int) ($formulario['id'] ?? 0) ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars((string) ($formulario['nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?> | <?= htmlspecialchars((string) ($formulario['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                            <?= htmlspecialchars((string) ($formulario['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?> | <?= htmlspecialchars((string) ($formulario['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -199,7 +199,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                             <section class="group-card">
                                 <div class="group-header">
                                     <div>
-                                        <h2 class="group-title"><?= htmlspecialchars((string) ($grupo['formulario_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
+                                        <h2 class="group-title"><?= htmlspecialchars((string) ($grupo['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
                                         <div class="group-meta">Categoria: <strong><?= htmlspecialchars((string) ($grupo['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong> | Evento: <strong><?= htmlspecialchars((string) ($grupo['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></div>
                                     </div>
                                     <div class="group-actions">
@@ -321,7 +321,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                                 <div class="empty-state-box">
                                     <div class="empty-state-icon" aria-hidden="true"><span class="material-icons">analytics</span></div>
                                     <h2>No hay resultados para mostrar</h2>
-                                    <p>Cuando los jurados empiecen a cargar formularios, vas a ver aqui los resultados agrupados por formulario y categoria con el detalle completo de cada carga.</p>
+                                    <p>Cuando los jurados empiecen a cargar calificaciones, vas a ver aqui los resultados agrupados por subcategoria y categoria con el detalle completo de cada carga.</p>
                                 </div>
                             </div>
                         </section>
@@ -436,7 +436,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
             (grupo.competidores_detalle || []).forEach((competidor) => {
                 (competidor.evaluaciones || []).forEach((evaluacion) => {
                     const row = {
-                        Grupo: `${grupo.formulario_nombre || ''} | ${grupo.categoria || ''}`,
+                        Grupo: `${grupo.subcategoria || ''} | ${grupo.categoria || ''}`,
                         Puesto: competidor.puesto ?? '',
                         'N° Competidor': competidor.competidor_numero ?? '',
                         'Nombre principal': competidor.nombre_mostrar ?? '',
@@ -465,7 +465,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
             });
 
             const resumenRows = [
-                { Campo: 'Formulario', Valor: grupo.formulario_nombre || '' },
+                { Campo: 'Subcategoria', Valor: grupo.subcategoria || '' },
                 { Campo: 'Categoria', Valor: grupo.categoria || '' },
                 { Campo: 'Evento', Valor: grupo.evento_nombre || '' },
                 { Campo: 'Evaluaciones', Valor: grupo.total_evaluaciones || 0 },
@@ -482,7 +482,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
 
             const fileName = [
                 'resultados',
-                slugify(grupo.formulario_nombre || 'formulario'),
+                slugify(grupo.subcategoria || 'subcategoria'),
                 slugify(grupo.categoria || 'categoria')
             ].filter(Boolean).join('_') + '.xlsx';
 

@@ -60,10 +60,10 @@ class JuradoDashboardModel
     public function obtenerFormulariosActivosConCriterios(): array
     {
         $stmt = $this->db->query(
-            "SELECT id, nombre, categoria, evento_nombre, activo
+            "SELECT id, subcategoria, categoria, evento_nombre, activo
              FROM calificacion_formularios
              WHERE activo = 1
-             ORDER BY creado_en DESC, id DESC"
+             ORDER BY categoria ASC, subcategoria ASC, creado_en DESC, id DESC"
         );
         $formularios = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
 

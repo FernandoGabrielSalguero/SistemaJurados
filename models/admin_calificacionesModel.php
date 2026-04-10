@@ -80,13 +80,13 @@ class AdminCalificacionesModel
         try {
             $stmtFormulario = $this->db->prepare(
                 "INSERT INTO calificacion_formularios
-                    (nombre, categoria, evento_nombre, activo, creado_por)
+                    (subcategoria, categoria, evento_nombre, activo, creado_por)
                  VALUES
-                    (:nombre, :categoria, :evento_nombre, :activo, :creado_por)"
+                    (:subcategoria, :categoria, :evento_nombre, :activo, :creado_por)"
             );
 
             $stmtFormulario->execute([
-                'nombre' => $data['nombre'],
+                'subcategoria' => $data['subcategoria'],
                 'categoria' => $data['categoria'],
                 'evento_nombre' => $data['evento_nombre'],
                 'activo' => (int) ($data['activo'] ?? 0),
@@ -145,7 +145,7 @@ class AdminCalificacionesModel
         $tieneEvaluaciones = $this->tablaExiste('calificacion_evaluaciones');
 
         $sql = "SELECT f.id,
-                       f.nombre,
+                       f.subcategoria,
                        f.categoria,
                        f.evento_nombre,
                        f.activo,
@@ -171,7 +171,7 @@ class AdminCalificacionesModel
         }
 
         $sql .= "
-                GROUP BY f.id, f.nombre, f.categoria, f.evento_nombre, f.activo, f.creado_por, f.creado_en, a.usuario
+                GROUP BY f.id, f.subcategoria, f.categoria, f.evento_nombre, f.activo, f.creado_por, f.creado_en, a.usuario
                 ORDER BY f.activo DESC, f.creado_en DESC, f.id DESC";
 
         $stmt = $this->db->query($sql);

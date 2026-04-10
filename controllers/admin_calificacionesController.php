@@ -28,7 +28,7 @@ $mensaje = is_array($flash) ? (string) ($flash['mensaje'] ?? '') : '';
 $mensajeTipo = is_array($flash) ? (string) ($flash['tipo'] ?? 'success') : 'success';
 
 $formData = [
-    'nombre' => '',
+    'subcategoria' => '',
     'categoria' => '',
     'evento_nombre' => '',
     'activo' => 1,
@@ -48,7 +48,7 @@ function adminCalificacionesRedirect(): void
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['guardar_formulario'])) {
-        $formData['nombre'] = trim((string) ($_POST['nombre'] ?? ''));
+        $formData['subcategoria'] = trim((string) ($_POST['subcategoria'] ?? ''));
         $formData['categoria'] = trim((string) ($_POST['categoria'] ?? ''));
         $formData['evento_nombre'] = trim((string) ($_POST['evento_nombre'] ?? ''));
         $formData['activo'] = isset($_POST['activo']) ? 1 : 0;
@@ -81,8 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$estadoTablas['formularios_listos']) {
                 $mensaje = 'Faltan tablas del modulo de calificaciones. Ejecuta primero el SQL nuevo en assets/estructura_base_datos.md.';
                 $mensajeTipo = 'danger';
-            } elseif ($formData['nombre'] === '' || $formData['categoria'] === '' || $formData['evento_nombre'] === '') {
-                $mensaje = 'Completa nombre del formulario, categoria y nombre del evento.';
+            } elseif ($formData['subcategoria'] === '' || $formData['categoria'] === '' || $formData['evento_nombre'] === '') {
+                $mensaje = 'Completa subcategoria, categoria y nombre del evento.';
                 $mensajeTipo = 'danger';
             } elseif ($totalPuntos !== 100) {
                 $mensaje = 'La suma total de los criterios debe ser exactamente 100 puntos.';
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 try {
                     $model->crearFormulario([
-                        'nombre' => $formData['nombre'],
+                        'subcategoria' => $formData['subcategoria'],
                         'categoria' => $formData['categoria'],
                         'evento_nombre' => $formData['evento_nombre'],
                         'activo' => $formData['activo'],
@@ -99,12 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
 
                     $_SESSION['admin_calificaciones_flash'] = [
-                        'mensaje' => 'Formulario creado correctamente.',
+                        'mensaje' => 'Subcategoria creada correctamente.',
                         'tipo' => 'success',
                     ];
                     adminCalificacionesRedirect();
                 } catch (Throwable $e) {
-                    $mensaje = 'No se pudo guardar el formulario de calificacion.';
+                    $mensaje = 'No se pudo guardar la subcategoria de calificacion.';
                     $mensajeTipo = 'danger';
                 }
             }
@@ -150,7 +150,7 @@ $viewData = [
     'administrador' => $administrador,
     'usuarioSesion' => (string) ($administrador['usuario'] ?? $_SESSION['usuario'] ?? 'Administrador'),
     'pageTitle' => 'Calificaciones',
-    'pageSubtitle' => 'Crea los formularios base que despues completaran los jurados.',
+    'pageSubtitle' => 'Crea las subcategorias base que despues completaran los jurados.',
     'criteriosBase' => $criteriosBase,
     'estadoTablas' => $estadoTablas,
     'faltantesTablas' => $faltantes,

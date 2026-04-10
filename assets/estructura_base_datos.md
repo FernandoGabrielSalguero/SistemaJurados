@@ -51,7 +51,7 @@ Columna formulario_id referencia a calificacion_formularios.id
 📄 Tabla: calificacion_formularios
 Columna	Tipo	Nulo	Clave	Default	Extra
 id	int(10) unsigned	NO	PRI		auto_increment
-nombre	varchar(180)	NO			
+subcategoria	varchar(180)	NO			
 categoria	varchar(180)	NO	MUL		
 evento_nombre	varchar(180)	NO	MUL		
 activo	tinyint(1)	NO	MUL	1	
@@ -71,3 +71,12 @@ actualizado_en	timestamp	YES		current_timestamp()	on update current_timestamp()
 
 🔗 Relaciones:
 Columna user_auth_id referencia a auth.id
+
+SQL de migracion para instalaciones existentes:
+
+```sql
+ALTER TABLE calificacion_formularios
+CHANGE COLUMN nombre subcategoria VARCHAR(180) NOT NULL;
+```
+
+Si ademas queres actualizar el esquema documentado desde cero, usa `subcategoria` en lugar de `nombre` en cualquier `CREATE TABLE` nuevo para `calificacion_formularios`.

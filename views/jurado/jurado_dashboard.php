@@ -6,11 +6,13 @@ $usuarioSesion = $viewData['usuarioSesion'] ?? 'Jurado';
 $pageTitle = $viewData['pageTitle'] ?? 'Formulario de calificacion';
 $pageSubtitle = $viewData['pageSubtitle'] ?? '';
 $estadoTablas = $viewData['estadoTablas'] ?? ['faltantes' => []];
+$categoriasDisponibles = $viewData['categoriasDisponibles'] ?? [];
+$subcategoriasDisponibles = $viewData['subcategoriasDisponibles'] ?? [];
 $formulariosActivos = $viewData['formulariosActivos'] ?? [];
 $formularioSeleccionado = $viewData['formularioSeleccionado'] ?? null;
 $mensaje = $viewData['mensaje'] ?? '';
 $mensajeTipo = $viewData['mensajeTipo'] ?? 'success';
-$formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' => '', 'competidor_nombre' => '', 'puntajes' => []];
+$formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, 'competidor_numero' => '', 'competidor_nombre' => '', 'puntajes' => []];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -125,12 +127,24 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
                                 <div class="form-main">
                                     <div class="top-grid">
                                         <div class="summary-card">
-                                            <div class="summary-label">Formulario activo</div>
+                                            <div class="summary-label">Categoria</div>
                                             <div class="form-field">
-                                                <select id="formulario_id" name="formulario_id" onchange="window.location.href='?formulario_id=' + this.value;">
-                                                    <?php foreach ($formulariosActivos as $formulario): ?>
+                                                <select id="categoria" name="categoria" onchange="window.location.href='?categoria=' + encodeURIComponent(this.value);">
+                                                    <?php foreach ($categoriasDisponibles as $categoria): ?>
+                                                        <option value="<?= htmlspecialchars((string) $categoria, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($formData['categoria'] ?? '') === (string) $categoria ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars((string) $categoria, ENT_QUOTES, 'UTF-8') ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="summary-card">
+                                            <div class="summary-label">Subcategoria</div>
+                                            <div class="form-field">
+                                                <select id="formulario_id" name="formulario_id" onchange="window.location.href='?categoria=' + encodeURIComponent(document.getElementById('categoria').value) + '&formulario_id=' + this.value;">
+                                                    <?php foreach ($subcategoriasDisponibles as $formulario): ?>
                                                         <option value="<?= (int) ($formulario['id'] ?? 0) ?>" <?= (int) ($formData['formulario_id'] ?? 0) === (int) ($formulario['id'] ?? 0) ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars((string) ($formulario['nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                                            <?= htmlspecialchars((string) ($formulario['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
@@ -143,10 +157,6 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
                                         <div class="summary-card">
                                             <div class="summary-label">Competencia</div>
                                             <div class="summary-value" id="resumenCompetencia"><?= htmlspecialchars((string) ($formularioSeleccionado['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                        </div>
-                                        <div class="summary-card">
-                                            <div class="summary-label">Categoria</div>
-                                            <div class="summary-value" id="resumenCategoria"><?= htmlspecialchars((string) ($formularioSeleccionado['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                                         </div>
                                     </div>
 
@@ -196,8 +206,8 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
 
                                     <div class="resume-list">
                                         <div class="resume-item">
-                                            <div class="resume-item-label">Formulario activo</div>
-                                            <div class="resume-item-value" id="resumenFormulario"><?= htmlspecialchars((string) ($formularioSeleccionado['nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                            <div class="resume-item-label">Subcategoria</div>
+                                            <div class="resume-item-value" id="resumenFormulario"><?= htmlspecialchars((string) ($formularioSeleccionado['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                                         </div>
                                         <div class="resume-item">
                                             <div class="resume-item-label">Jurado</div>
@@ -209,7 +219,7 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
                                         </div>
                                         <div class="resume-item">
                                             <div class="resume-item-label">Categoria</div>
-                                            <div class="resume-item-value"><?= htmlspecialchars((string) ($formularioSeleccionado['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                            <div class="resume-item-value" id="resumenCategoria"><?= htmlspecialchars((string) ($formularioSeleccionado['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                                         </div>
                                         <div class="resume-item">
                                             <div class="resume-item-label">N° del competidor</div>
@@ -246,8 +256,8 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
                         <div class="empty-state">
                             <div class="empty-state-box">
                                 <div class="empty-state-icon" aria-hidden="true"><span class="material-icons">fact_check</span></div>
-                                <h2>No hay formularios activos</h2>
-                                <p>El administrador todavia no publico ninguna plantilla de calificacion para que puedas evaluar competidores.</p>
+                                <h2>No hay subcategorias activas</h2>
+                                <p>El administrador todavia no publico ninguna subcategoria de calificacion para que puedas evaluar competidores.</p>
                             </div>
                         </div>
                     </section>
@@ -264,6 +274,8 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
         const resumenCompetidorNumero = document.getElementById('resumenCompetidorNumero');
         const formularioSelect = document.getElementById('formulario_id');
         const resumenFormulario = document.getElementById('resumenFormulario');
+        const resumenCategoria = document.getElementById('resumenCategoria');
+        const categoriaSelect = document.getElementById('categoria');
 
         function actualizarResumen() {
             let total = 0;
@@ -280,6 +292,9 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
             }
             if (resumenFormulario && formularioSelect) {
                 resumenFormulario.textContent = formularioSelect.options[formularioSelect.selectedIndex]?.textContent?.trim() || '';
+            }
+            if (resumenCategoria && categoriaSelect) {
+                resumenCategoria.textContent = categoriaSelect.options[categoriaSelect.selectedIndex]?.textContent?.trim() || '';
             }
         }
 

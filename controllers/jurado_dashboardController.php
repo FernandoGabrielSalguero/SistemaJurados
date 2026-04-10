@@ -27,33 +27,61 @@ unset($_SESSION['jurado_dashboard_flash']);
 $mensaje = is_array($flash) ? (string) ($flash['mensaje'] ?? '') : '';
 $mensajeTipo = is_array($flash) ? (string) ($flash['tipo'] ?? 'success') : 'success';
 
+$categoriaSeleccionada = trim((string) ($_GET['categoria'] ?? ''));
 $formData = [
+    'categoria' => $categoriaSeleccionada,
     'formulario_id' => isset($_GET['formulario_id']) ? (int) $_GET['formulario_id'] : 0,
     'competidor_numero' => '',
     'competidor_nombre' => '',
     'puntajes' => [],
 ];
 
-function juradoDashboardRedirect(int $formularioId = 0): void
+function juradoDashboardRedirect(string $categoria = '', int $formularioId = 0): void
 {
     $redirectUrl = strtok((string) ($_SERVER['REQUEST_URI'] ?? '/views/jurado/jurado_dashboard.php'), '?');
+    $query = [];
+    if ($categoria !== '') {
+        $query['categoria'] = $categoria;
+    }
     if ($formularioId > 0) {
-        $redirectUrl .= '?formulario_id=' . $formularioId;
+        $query['formulario_id'] = $formularioId;
+    }
+    if ($query) {
+        $redirectUrl .= '?' . http_build_query($query);
     }
     header('Location: ' . $redirectUrl);
     exit;
 }
 
-$formularioSeleccionado = null;
+$categoriasDisponibles = [];
 foreach ($formulariosActivos as $formulario) {
+    $categoria = trim((string) ($formulario['categoria'] ?? ''));
+    if ($categoria !== '') {
+        $categoriasDisponibles[$categoria] = $categoria;
+    }
+}
+$categoriasDisponibles = array_values($categoriasDisponibles);
+
+if ($categoriaSeleccionada === '' && $categoriasDisponibles) {
+    $categoriaSeleccionada = $categoriasDisponibles[0];
+    $formData['categoria'] = $categoriaSeleccionada;
+}
+
+$subcategoriasDisponibles = array_values(array_filter(
+    $formulariosActivos,
+    static fn(array $formulario): bool => trim((string) ($formulario['categoria'] ?? '')) === $categoriaSeleccionada
+));
+
+$formularioSeleccionado = null;
+foreach ($subcategoriasDisponibles as $formulario) {
     if ((int) ($formulario['id'] ?? 0) === (int) $formData['formulario_id']) {
         $formularioSeleccionado = $formulario;
         break;
     }
 }
 
-if ($formularioSeleccionado === null && $formulariosActivos) {
-    $formularioSeleccionado = $formulariosActivos[0];
+if ($formularioSeleccionado === null && $subcategoriasDisponibles) {
+    $formularioSeleccionado = $subcategoriasDisponibles[0];
     $formData['formulario_id'] = (int) ($formularioSeleccionado['id'] ?? 0);
 }
 
@@ -65,12 +93,19 @@ if ($formularioSeleccionado) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])) {
+    $formData['categoria'] = trim((string) ($_POST['categoria'] ?? $categoriaSeleccionada));
     $formData['formulario_id'] = (int) ($_POST['formulario_id'] ?? 0);
     $formData['competidor_numero'] = trim((string) ($_POST['competidor_numero'] ?? ''));
     $formData['competidor_nombre'] = trim((string) ($_POST['competidor_nombre'] ?? ''));
 
+    $categoriaSeleccionada = $formData['categoria'];
+    $subcategoriasDisponibles = array_values(array_filter(
+        $formulariosActivos,
+        static fn(array $formulario): bool => trim((string) ($formulario['categoria'] ?? '')) === $categoriaSeleccionada
+    ));
+
     $formularioSeleccionado = null;
-    foreach ($formulariosActivos as $formulario) {
+    foreach ($subcategoriasDisponibles as $formulario) {
         if ((int) ($formulario['id'] ?? 0) === (int) $formData['formulario_id']) {
             $formularioSeleccionado = $formulario;
             break;
@@ -88,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
         $mensaje = 'Faltan tablas del modulo de calificaciones. Ejecuta primero el SQL nuevo.';
         $mensajeTipo = 'danger';
     } elseif ($formularioSeleccionado === null) {
-        $mensaje = 'Selecciona un formulario valido.';
+        $mensaje = 'Selecciona una subcategoria valida.';
         $mensajeTipo = 'danger';
     } elseif ($formData['competidor_numero'] === '' || $formData['competidor_nombre'] === '') {
         $mensaje = 'Completa el numero y el nombre del competidor.';
@@ -139,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
                     'mensaje' => 'Calificacion guardada correctamente.',
                     'tipo' => 'success',
                 ];
-                juradoDashboardRedirect((int) $formularioSeleccionado['id']);
+                juradoDashboardRedirect((string) ($formularioSeleccionado['categoria'] ?? ''), (int) $formularioSeleccionado['id']);
             } catch (Throwable $e) {
                 $mensaje = 'No se pudo guardar la evaluacion.';
                 $mensajeTipo = 'danger';
@@ -152,8 +187,10 @@ $viewData = [
     'jurado' => $jurado,
     'usuarioSesion' => (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado'),
     'pageTitle' => 'Formulario de calificacion',
-    'pageSubtitle' => 'Completa la evaluacion del competidor usando una plantilla activa.',
+    'pageSubtitle' => 'Selecciona categoria y subcategoria para completar la evaluacion del competidor.',
     'estadoTablas' => $estadoTablas,
+    'categoriasDisponibles' => $categoriasDisponibles,
+    'subcategoriasDisponibles' => $subcategoriasDisponibles,
     'formulariosActivos' => $formulariosActivos,
     'formularioSeleccionado' => $formularioSeleccionado,
     'mensaje' => $mensaje,

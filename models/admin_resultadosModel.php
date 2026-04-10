@@ -64,9 +64,9 @@ class AdminResultadosModel
 
         try {
             $stmtFormularios = $this->db->query(
-                "SELECT DISTINCT id, nombre, categoria, evento_nombre
+                "SELECT DISTINCT id, subcategoria, categoria, evento_nombre
                  FROM calificacion_formularios
-                 ORDER BY nombre ASC, categoria ASC"
+                 ORDER BY categoria ASC, subcategoria ASC"
             );
             $formularios = $stmtFormularios ? $stmtFormularios->fetchAll(PDO::FETCH_ASSOC) : [];
         } catch (Throwable $e) {
@@ -106,7 +106,7 @@ class AdminResultadosModel
                        e.puntaje_total,
                        e.promedio,
                        e.creado_en,
-                       f.nombre AS formulario_nombre,
+                       f.subcategoria,
                        a.usuario AS jurado_usuario";
 
         if ($this->tablaExiste('informacion_usuarios')) {
@@ -138,7 +138,7 @@ class AdminResultadosModel
             $params['categoria'] = $categoria;
         }
 
-        $sql .= " ORDER BY f.nombre ASC, e.categoria ASC, e.puntaje_total DESC, e.creado_en DESC, e.id DESC";
+        $sql .= " ORDER BY f.subcategoria ASC, e.categoria ASC, e.puntaje_total DESC, e.creado_en DESC, e.id DESC";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -160,7 +160,7 @@ class AdminResultadosModel
             if (!isset($agrupados[$groupKey])) {
                 $agrupados[$groupKey] = [
                     'formulario_id' => (int) $evaluacion['formulario_id'],
-                    'formulario_nombre' => (string) $evaluacion['formulario_nombre'],
+                    'subcategoria' => (string) $evaluacion['subcategoria'],
                     'categoria' => (string) $evaluacion['categoria'],
                     'evento_nombre' => (string) $evaluacion['evento_nombre'],
                     'evaluaciones' => [],
