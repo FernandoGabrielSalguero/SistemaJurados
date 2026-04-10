@@ -1049,17 +1049,9 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                         <span class="material-icons">home</span>
                         <span class="link-text">Inicio</span>
                     </li>
-                    <li>
-                        <span class="material-icons">group</span>
-                        <span class="link-text">Usuarios</span>
-                    </li>
-                    <li>
-                        <span class="material-icons">groups</span>
-                        <span class="link-text">Jurados</span>
-                    </li>
-                    <li>
+                    <li onclick="location.href='admin_calificaciones.php'">
                         <span class="material-icons">table_chart</span>
-                        <span class="link-text">Registros</span>
+                        <span class="link-text">Calificaciones</span>
                     </li>
                     <li onclick="location.href='../../logout.php'">
                         <span class="material-icons">logout</span>
