@@ -101,16 +101,18 @@ $formData = $viewData['formData'] ?? ['formulario_id' => 0, 'competidor_numero' 
 
         <main class="content">
             <div class="page-shell">
-                <section class="panel-card hero-card">
-                    <h1><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></h1>
-                    <p><?= htmlspecialchars($pageSubtitle, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php if ($mensaje !== ''): ?>
+                <?php if ($mensaje !== ''): ?>
+                    <section class="panel-card">
                         <div class="alert-inline <?= htmlspecialchars($mensajeTipo, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8') ?></div>
-                    <?php endif; ?>
-                    <?php if ($estadoTablas['faltantes'] ?? []): ?>
+                        <?php if ($estadoTablas['faltantes'] ?? []): ?>
+                            <div class="alert-inline warning">Todavia faltan tablas del modulo: <strong><?= htmlspecialchars(implode(', ', $estadoTablas['faltantes']), ENT_QUOTES, 'UTF-8') ?></strong>.</div>
+                        <?php endif; ?>
+                    </section>
+                <?php elseif ($estadoTablas['faltantes'] ?? []): ?>
+                    <section class="panel-card">
                         <div class="alert-inline warning">Todavia faltan tablas del modulo: <strong><?= htmlspecialchars(implode(', ', $estadoTablas['faltantes']), ENT_QUOTES, 'UTF-8') ?></strong>.</div>
-                    <?php endif; ?>
-                </section>
+                    </section>
+                <?php endif; ?>
 
                 <?php if ($formularioSeleccionado): ?>
                     <section class="panel-card">
