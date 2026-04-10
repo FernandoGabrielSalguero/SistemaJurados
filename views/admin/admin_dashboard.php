@@ -38,22 +38,37 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/framework/framework.css">
-    <script src="../../assets/framework/framework.js" defer></script>
 
     <style>
+        @font-face {
+            font-family: 'Montserrat';
+            src: url('../../assets/institucionales/fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype');
+            font-weight: 100 900;
+            font-style: normal;
+            font-display: swap;
+        }
+
         :root {
-            --admin-bg: #f4f6fb;
             --admin-surface: #ffffff;
-            --admin-border: #e7ebf3;
+            --admin-bg: #f3f6fb;
+            --admin-border: #e5ebf4;
             --admin-text: #1f2937;
-            --admin-muted: #5f6b7a;
+            --admin-muted: #67768a;
             --admin-primary: #2f6df6;
             --admin-primary-soft: #eaf1ff;
-            --admin-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            --admin-danger: #ef4444;
+            --admin-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+            --sidebar-width: 208px;
+            --sidebar-collapsed-width: 72px;
+        }
+
+        html {
+            font-size: 14px;
         }
 
         body {
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(180deg, #f8fafc 0%, #eff4fb 100%);
             color: var(--admin-text);
         }
 
@@ -62,31 +77,35 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .sidebar {
-            background: rgba(255, 255, 255, 0.94);
+            width: var(--sidebar-width);
+            background: rgba(255, 255, 255, 0.96);
             border-right: 1px solid var(--admin-border);
-            box-shadow: 8px 0 26px rgba(15, 23, 42, 0.04);
+            box-shadow: 8px 0 24px rgba(15, 23, 42, 0.04);
+            transition: width 0.22s ease, transform 0.22s ease;
+            z-index: 40;
         }
 
         .sidebar-header {
-            padding: 22px 20px;
+            padding: 18px 16px;
             border-bottom: 1px solid var(--admin-border);
-            gap: 12px;
+            gap: 10px;
+            min-height: 76px;
         }
 
         .logo-badge {
-            width: 22px;
-            height: 22px;
-            border-radius: 7px;
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
             background: linear-gradient(135deg, #2f6df6, #4c8bff);
             position: relative;
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+            flex-shrink: 0;
         }
 
         .logo-badge::before,
         .logo-badge::after {
             content: "";
             position: absolute;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.96);
         }
 
         .logo-badge::before {
@@ -106,13 +125,14 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .logo-text {
-            font-size: 1.65rem;
+            font-size: 1rem;
             font-weight: 800;
             color: #202633;
+            white-space: nowrap;
         }
 
         .sidebar-menu {
-            padding: 18px 14px;
+            padding: 14px 10px;
         }
 
         .sidebar-menu ul {
@@ -122,21 +142,22 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .sidebar-menu li {
-            border-radius: 14px;
-            padding: 12px 14px;
-            color: #3d4a5c;
+            border-radius: 13px;
+            padding: 11px 14px;
+            color: #415066;
             font-weight: 600;
-            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+            font-size: 0.95rem;
+            transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
         }
 
         .sidebar-menu li .material-icons {
             color: var(--admin-primary);
-            font-size: 22px;
+            font-size: 20px;
         }
 
         .sidebar-menu li.active {
             background: var(--admin-primary-soft);
-            color: #1d4ed8;
+            color: #2151c8;
         }
 
         .sidebar-menu li:not(.active):hover {
@@ -145,22 +166,22 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         }
 
         .sidebar-footer {
-            padding: 14px;
+            padding: 12px 10px 14px;
             border-top: 1px solid var(--admin-border);
         }
 
         .main {
             background:
-                radial-gradient(circle at top left, rgba(47, 109, 246, 0.08), transparent 22%),
-                linear-gradient(180deg, #f8fafc 0%, #f2f5fa 100%);
+                radial-gradient(circle at top left, rgba(47, 109, 246, 0.06), transparent 18%),
+                linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
         }
 
         .navbar {
-            background: rgba(255, 255, 255, 0.82);
-            backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(14px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.92);
             justify-content: space-between;
-            padding: 18px 24px;
+            padding: 14px 20px;
             position: sticky;
             top: 0;
             z-index: 20;
@@ -169,28 +190,37 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .navbar-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .navbar-title {
-            font-size: 1.45rem;
+            font-size: 1rem;
             font-weight: 800;
             color: #1f2937;
+            line-height: 1.2;
         }
 
         .navbar-subtitle {
             color: var(--admin-muted);
-            font-size: 0.95rem;
+            font-size: 0.85rem;
+            line-height: 1.25;
         }
 
         .btn-icon {
             background: transparent;
             border: 0;
             box-shadow: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-icon .material-icons {
             color: var(--admin-primary);
+            font-size: 1.35rem;
         }
 
         .navbar-actions {
@@ -202,40 +232,42 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .logout-link {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             border-radius: 999px;
             background: #fff;
-            color: #dc2626;
+            color: var(--admin-danger);
             border: 1px solid #fecaca;
-            padding: 10px 16px;
+            padding: 9px 14px;
             text-decoration: none;
             font-weight: 700;
+            font-size: 0.92rem;
         }
 
         .content {
-            padding: 28px;
+            padding: 20px;
         }
 
         .page-shell {
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 20px;
         }
 
         .panel-card {
             background: var(--admin-surface);
             border: 1px solid var(--admin-border);
-            border-radius: 22px;
+            border-radius: 20px;
             box-shadow: var(--admin-shadow);
-            padding: 26px 24px;
+            padding: 20px 22px;
         }
 
         .hero-card h1,
         .section-title {
-            margin: 0 0 8px;
-            font-size: 2rem;
+            margin: 0 0 6px;
+            font-size: 1.25rem;
             font-weight: 800;
             color: #202633;
+            line-height: 1.2;
         }
 
         .hero-card p,
@@ -244,13 +276,14 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .table-note {
             margin: 0;
             color: var(--admin-muted);
-            line-height: 1.55;
+            line-height: 1.5;
+            font-size: 0.92rem;
         }
 
         .hero-actions {
-            margin-top: 20px;
+            margin-top: 16px;
             display: flex;
-            gap: 12px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
@@ -258,17 +291,18 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .secondary-chip {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            border-radius: 14px;
-            padding: 12px 18px;
+            gap: 7px;
+            border-radius: 13px;
+            padding: 10px 14px;
             text-decoration: none;
             font-weight: 700;
+            font-size: 0.92rem;
         }
 
         .primary-chip {
             background: linear-gradient(135deg, #2f6df6, #4391ff);
             color: #fff;
-            box-shadow: 0 12px 24px rgba(47, 109, 246, 0.24);
+            box-shadow: 0 10px 20px rgba(47, 109, 246, 0.18);
         }
 
         .secondary-chip {
@@ -280,76 +314,80 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 20px;
+            gap: 16px;
+            margin-top: 18px;
         }
 
         .metric-card {
             background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
             border: 1px solid var(--admin-border);
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
         }
 
         .metric-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 18px;
+            gap: 12px;
+            margin-bottom: 14px;
         }
 
         .metric-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 14px;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             background: var(--admin-primary-soft);
             color: var(--admin-primary);
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
         .metric-label {
             color: var(--admin-muted);
-            font-size: 0.95rem;
-            margin-bottom: 6px;
+            font-size: 0.88rem;
+            margin-bottom: 4px;
         }
 
         .metric-value {
-            font-size: 2rem;
+            font-size: 1.8rem;
             line-height: 1;
             font-weight: 800;
             color: #202633;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .split-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
-            gap: 20px;
+            grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+            gap: 16px;
         }
 
         .mini-list {
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            margin-top: 20px;
+            gap: 10px;
+            margin-top: 16px;
         }
 
         .mini-item {
             display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px 18px;
-            border-radius: 18px;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 16px;
             border: 1px solid var(--admin-border);
             background: #fff;
         }
 
         .mini-badge {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
             background: var(--admin-primary-soft);
             color: var(--admin-primary);
             display: inline-flex;
@@ -357,6 +395,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             justify-content: center;
             font-weight: 800;
             flex-shrink: 0;
+            font-size: 0.95rem;
         }
 
         .mini-item strong,
@@ -364,26 +403,35 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             display: block;
             margin-bottom: 4px;
             color: #202633;
+            font-size: 0.94rem;
         }
 
         .table-responsive {
-            margin-top: 22px;
+            margin-top: 18px;
             border: 1px solid var(--admin-border);
-            border-radius: 18px;
-            overflow: hidden;
+            border-radius: 16px;
+            overflow: auto;
         }
 
         .table {
             margin-bottom: 0;
+            min-width: 560px;
         }
 
         .table thead th {
             background: #f8fafc;
             color: #5b6472;
             border-bottom-color: var(--admin-border);
-            font-size: 0.8rem;
+            font-size: 0.74rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            padding: 12px 14px;
+        }
+
+        .table tbody td {
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            vertical-align: top;
         }
 
         .table tbody tr:last-child td {
@@ -394,9 +442,10 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             display: inline-flex;
             align-items: center;
             border-radius: 999px;
-            padding: 7px 12px;
-            font-size: 0.82rem;
+            padding: 6px 11px;
+            font-size: 0.75rem;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         .role-pill.role-admin {
@@ -412,37 +461,97 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         .empty-state {
             text-align: center;
             color: var(--admin-muted);
-            padding: 34px 18px;
+            padding: 28px 16px;
         }
 
-        @media (max-width: 1080px) {
-            .metrics-grid,
+        body.sidebar-collapsed .sidebar {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        body.sidebar-collapsed .logo-text,
+        body.sidebar-collapsed .link-text {
+            display: none;
+        }
+
+        body.sidebar-collapsed .sidebar-menu li {
+            justify-content: center;
+            padding-inline: 10px;
+        }
+
+        body.sidebar-collapsed .sidebar-header,
+        body.sidebar-collapsed .sidebar-footer {
+            justify-content: center;
+        }
+
+        body.sidebar-collapsed .sidebar-menu li .material-icons {
+            margin-right: 0;
+        }
+
+        @media (max-width: 1180px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
             .split-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        @media (max-width: 768px) {
-            .content {
-                padding: 18px;
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: min(82vw, 260px);
+                position: fixed;
+                inset: 0 auto 0 0;
+            }
+
+            body.sidebar-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .main {
+                width: 100%;
             }
 
             .navbar {
-                padding: 14px 18px;
+                padding: 12px 16px;
+            }
+
+            .content {
+                padding: 16px;
             }
 
             .panel-card {
-                padding: 22px 18px;
+                padding: 18px 16px;
                 border-radius: 18px;
             }
 
-            .hero-card h1,
-            .section-title {
-                font-size: 1.6rem;
+            .metrics-grid {
+                grid-template-columns: 1fr;
             }
 
-            .navbar-actions {
-                gap: 8px;
+            .navbar-actions .navbar-subtitle {
+                display: none;
+            }
+
+            .logout-link {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            html {
+                font-size: 13px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+            }
+
+            .primary-chip,
+            .secondary-chip {
+                width: 100%;
+                justify-content: center;
             }
 
             .logout-link span:last-child {
@@ -490,7 +599,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn-icon" type="button" onclick="toggleSidebar()">
+                <button class="btn-icon" type="button" id="collapseSidebarBtn" aria-label="Contraer menú">
                     <span class="material-icons" id="collapseIcon">chevron_left</span>
                 </button>
             </div>
@@ -499,7 +608,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         <div class="main">
             <header class="navbar">
                 <div class="navbar-left">
-                    <button class="btn-icon" type="button" onclick="toggleSidebar()">
+                    <button class="btn-icon" type="button" id="toggleSidebarBtn" aria-label="Abrir menú">
                         <span class="material-icons">menu</span>
                     </button>
                     <div>
@@ -521,7 +630,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                 <div class="page-shell">
                     <div class="panel-card hero-card">
                         <h1>¡Qué gusto verte!</h1>
-                        <p>Estás viendo el panel interno de administración de Impulsa. Esta vista quedó organizada con menú lateral, tarjetas de métricas y una tabla central para revisar los accesos guardados en la tabla <code>auth</code>.</p>
+                        <p>Estás viendo el panel interno de administración de Impulsa. Esta vista quedó organizada con menú lateral, métricas y una tabla central para revisar los accesos guardados en la tabla <code>auth</code>.</p>
                         <div class="hero-actions">
                             <a href="#resumen" class="primary-chip">
                                 <span class="material-icons">play_arrow</span>
@@ -538,7 +647,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                         <h2 class="section-title">Resumen general</h2>
                         <p class="section-caption">Indicadores rápidos del sistema de acceso para administradores y jurados.</p>
 
-                        <div class="metrics-grid" style="margin-top:22px;">
+                        <div class="metrics-grid">
                             <article class="metric-card">
                                 <div class="metric-head">
                                     <div>
@@ -619,7 +728,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
                         <aside class="panel-card">
                             <h2 class="section-title">Cómo navegar</h2>
-                            <p class="section-caption">El menú lateral replica la estructura del framework para que el panel se sienta consistente con tu referencia.</p>
+                            <p class="section-caption">El menú lateral quedó fijo en un único estilo visual y adaptado a pantallas chicas.</p>
 
                             <div class="mini-list">
                                 <div class="mini-item">
@@ -634,7 +743,7 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                     <span class="mini-badge">2</span>
                                     <div>
                                         <strong>Panel</strong>
-                                        <span class="table-note">Espacio pensado para sumar nuevas tarjetas o módulos.</span>
+                                        <span class="table-note">Espacio disponible para sumar nuevos módulos.</span>
                                     </div>
                                 </div>
 
@@ -652,6 +761,66 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             </section>
         </div>
     </div>
+
+    <script>
+        const body = document.body;
+        const sidebar = document.getElementById('sidebar');
+        const collapseButton = document.getElementById('collapseSidebarBtn');
+        const collapseIcon = document.getElementById('collapseIcon');
+        const toggleSidebarButton = document.getElementById('toggleSidebarBtn');
+        const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
+
+        function syncSidebarState() {
+            if (mobileBreakpoint.matches) {
+                body.classList.remove('sidebar-collapsed');
+                collapseIcon.textContent = 'chevron_left';
+                return;
+            }
+
+            collapseIcon.textContent = body.classList.contains('sidebar-collapsed')
+                ? 'chevron_right'
+                : 'chevron_left';
+        }
+
+        collapseButton.addEventListener('click', () => {
+            if (mobileBreakpoint.matches) {
+                body.classList.remove('sidebar-open');
+                return;
+            }
+
+            body.classList.toggle('sidebar-collapsed');
+            syncSidebarState();
+        });
+
+        toggleSidebarButton.addEventListener('click', () => {
+            if (mobileBreakpoint.matches) {
+                body.classList.toggle('sidebar-open');
+                return;
+            }
+
+            body.classList.toggle('sidebar-collapsed');
+            syncSidebarState();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!mobileBreakpoint.matches || !body.classList.contains('sidebar-open')) {
+                return;
+            }
+
+            if (sidebar.contains(event.target) || toggleSidebarButton.contains(event.target)) {
+                return;
+            }
+
+            body.classList.remove('sidebar-open');
+        });
+
+        mobileBreakpoint.addEventListener('change', () => {
+            body.classList.remove('sidebar-open');
+            syncSidebarState();
+        });
+
+        syncSidebarState();
+    </script>
 </body>
 
 </html>
