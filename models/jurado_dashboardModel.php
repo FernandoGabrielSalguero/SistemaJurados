@@ -1,8 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../config.php';
-
-class EmprendedorDashboardModel
+class JuradoDashboardModel
 {
     private PDO $db;
 
@@ -12,172 +10,174 @@ class EmprendedorDashboardModel
     }
 
     /**
-     * Devuelve el perfil completo del emprendedor (auth + info + contacto).
-     *
      * @return array<string, mixed>
      */
-    public function obtenerPerfil(int $userId): array
+    public function obtenerJurado(int $userId): array
     {
         $stmt = $this->db->prepare(
-            "SELECT
-                ua.id,
-                ua.correo,
-                ua.rol,
-                ua.email_verified_at,
-                ua.created_at,
-                ui.nombre,
-                ui.apellido,
-                ui.apodo,
-                ui.avatar_path,
-                ui.fecha_nacimiento,
-                uc.check_correo,
-                uc.permison_correo,
-                uc.whatsapp,
-                uc.check_whatsapp,
-                uc.permison_whatsapp
-             FROM user_auth ua
-             LEFT JOIN user_info     ui ON ui.user_auth_id = ua.id
-             LEFT JOIN user_contacto uc ON uc.user_auth_id = ua.id
-             WHERE ua.id = :id
+            "SELECT id, usuario, rol, creado_en
+             FROM auth
+             WHERE id = :id
+               AND rol = 'impulsa_jurado'
              LIMIT 1"
         );
         $stmt->execute(['id' => $userId]);
+
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function obtenerProgresoMision(int $userId): bool
+    /**
+     * @return array<string, mixed>
+     */
+    public function obtenerEstadoTablasCalificaciones(): array
     {
-        try {
-            $stmt = $this->db->prepare(
-                "SELECT completado
-                 FROM emprendedor_mision
-                 WHERE user_auth_id = :id
-                 LIMIT 1"
-            );
-            $stmt->execute(['id' => $userId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $requeridas = [
+            'calificacion_formularios',
+            'calificacion_formulario_criterios',
+            'calificacion_evaluaciones',
+            'calificacion_evaluacion_detalles',
+        ];
 
-            return !empty($row['completado']);
-        } catch (PDOException $e) {
-            return false;
+        $faltantes = [];
+        foreach ($requeridas as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                $faltantes[] = $tabla;
+            }
+        }
+
+        return [
+            'formularios_listos' => !in_array('calificacion_formularios', $faltantes, true)
+                && !in_array('calificacion_formulario_criterios', $faltantes, true),
+            'evaluaciones_listas' => !in_array('calificacion_evaluaciones', $faltantes, true)
+                && !in_array('calificacion_evaluacion_detalles', $faltantes, true),
+            'faltantes' => $faltantes,
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function obtenerFormulariosActivosConCriterios(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT id, nombre, categoria, evento_nombre, activo
+             FROM calificacion_formularios
+             WHERE activo = 1
+             ORDER BY creado_en DESC, id DESC"
+        );
+        $formularios = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        if (!$formularios) {
+            return [];
+        }
+
+        $ids = array_map(static fn(array $formulario): int => (int) $formulario['id'], $formularios);
+        $criterios = $this->obtenerCriteriosPorFormularioIds($ids);
+
+        foreach ($formularios as &$formulario) {
+            $formularioId = (int) $formulario['id'];
+            $formulario['criterios'] = $criterios[$formularioId] ?? [];
+        }
+        unset($formulario);
+
+        return $formularios;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function guardarEvaluacion(array $data): int
+    {
+        $this->db->beginTransaction();
+
+        try {
+            $stmtEvaluacion = $this->db->prepare(
+                "INSERT INTO calificacion_evaluaciones
+                    (formulario_id, jurado_id, competidor_numero, competidor_nombre, categoria, evento_nombre, puntaje_total, promedio)
+                 VALUES
+                    (:formulario_id, :jurado_id, :competidor_numero, :competidor_nombre, :categoria, :evento_nombre, :puntaje_total, :promedio)"
+            );
+
+            $stmtEvaluacion->execute([
+                'formulario_id' => (int) $data['formulario_id'],
+                'jurado_id' => (int) $data['jurado_id'],
+                'competidor_numero' => $data['competidor_numero'],
+                'competidor_nombre' => $data['competidor_nombre'],
+                'categoria' => $data['categoria'],
+                'evento_nombre' => $data['evento_nombre'],
+                'puntaje_total' => $data['puntaje_total'],
+                'promedio' => $data['promedio'],
+            ]);
+
+            $evaluacionId = (int) $this->db->lastInsertId();
+
+            $stmtDetalle = $this->db->prepare(
+                "INSERT INTO calificacion_evaluacion_detalles
+                    (evaluacion_id, criterio_clave, criterio_nombre, puntaje_maximo, puntaje_otorgado)
+                 VALUES
+                    (:evaluacion_id, :criterio_clave, :criterio_nombre, :puntaje_maximo, :puntaje_otorgado)"
+            );
+
+            foreach ($data['detalles'] as $detalle) {
+                $stmtDetalle->execute([
+                    'evaluacion_id' => $evaluacionId,
+                    'criterio_clave' => $detalle['criterio_clave'],
+                    'criterio_nombre' => $detalle['criterio_nombre'],
+                    'puntaje_maximo' => $detalle['puntaje_maximo'],
+                    'puntaje_otorgado' => $detalle['puntaje_otorgado'],
+                ]);
+            }
+
+            $this->db->commit();
+            return $evaluacionId;
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
         }
     }
 
-    public function obtenerProgresoVision(int $userId): bool
+    private function tablaExiste(string $tabla): bool
     {
         try {
-            $stmt = $this->db->prepare(
-                "SELECT completado
-                 FROM emprendedor_vision
-                 WHERE user_auth_id = :id
-                 LIMIT 1"
-            );
-            $stmt->execute(['id' => $userId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            return !empty($row['completado']);
-        } catch (PDOException $e) {
-            return false;
-        }
-    }
-
-    public function obtenerProgresoBuyerPersona(int $userId): bool
-    {
-        try {
-            $stmt = $this->db->prepare(
-                "SELECT completado
-                 FROM emprendedor_buyer_persona
-                 WHERE user_auth_id = :id
-                 LIMIT 1"
-            );
-            $stmt->execute(['id' => $userId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            return !empty($row['completado']);
-        } catch (PDOException $e) {
+            $stmt = $this->db->prepare("SHOW TABLES LIKE :tabla");
+            $stmt->execute(['tabla' => $tabla]);
+            return (bool) $stmt->fetch(PDO::FETCH_NUM);
+        } catch (Throwable $e) {
             return false;
         }
     }
 
     /**
-     * @return array<string, mixed>
+     * @param array<int, int> $ids
+     * @return array<int, array<int, array<string, mixed>>>
      */
-    public function obtenerResumenMision(int $userId): array
+    private function obtenerCriteriosPorFormularioIds(array $ids): array
     {
-        try {
-            $stmt = $this->db->prepare(
-                "SELECT mision_estructura, completado
-                 FROM emprendedor_mision
-                 WHERE user_auth_id = :id
-                 LIMIT 1"
-            );
-            $stmt->execute(['id' => $userId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-        } catch (PDOException $e) {
+        if (!$ids) {
             return [];
         }
-    }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function obtenerResumenVision(int $userId): array
-    {
-        try {
-            $stmt = $this->db->prepare(
-                "SELECT vision_estructura, completado
-                 FROM emprendedor_vision
-                 WHERE user_auth_id = :id
-                 LIMIT 1"
-            );
-            $stmt->execute(['id' => $userId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-        } catch (PDOException $e) {
-            return [];
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->prepare(
+            "SELECT formulario_id, criterio_clave, criterio_nombre, puntaje_maximo, orden_visual
+             FROM calificacion_formulario_criterios
+             WHERE formulario_id IN ($placeholders)
+             ORDER BY formulario_id ASC, orden_visual ASC, id ASC"
+        );
+        $stmt->execute($ids);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $agrupados = [];
+        foreach ($rows as $row) {
+            $formularioId = (int) $row['formulario_id'];
+            if (!isset($agrupados[$formularioId])) {
+                $agrupados[$formularioId] = [];
+            }
+            $agrupados[$formularioId][] = $row;
         }
-    }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function obtenerResumenBuyerPersona(int $userId): array
-    {
-        try {
-            $stmt = $this->db->prepare(
-                "SELECT buyer_persona_estructura, completado
-                 FROM emprendedor_buyer_persona
-                 WHERE user_auth_id = :id
-                 LIMIT 1"
-            );
-            $stmt->execute(['id' => $userId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-        } catch (PDOException $e) {
-            return [];
-        }
-    }
-
-    public function obtenerProgresoLandingPage(int $userId): bool
-    {
-        try {
-            $stmt = $this->db->prepare(
-                "SELECT completado
-                 FROM landing_page_request
-                 WHERE user_auth_id = :id
-                 LIMIT 1"
-            );
-            $stmt->execute(['id' => $userId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            return !empty($row['completado']);
-        } catch (PDOException $e) {
-            return false;
-        }
-    }
-
-    public function puedeAccederLanding(int $userId): bool
-    {
-        return $this->obtenerProgresoMision($userId)
-            && $this->obtenerProgresoVision($userId)
-            && $this->obtenerProgresoBuyerPersona($userId);
+        return $agrupados;
     }
 }
