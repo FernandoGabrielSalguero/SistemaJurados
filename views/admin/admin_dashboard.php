@@ -1053,6 +1053,10 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                         <span class="material-icons">table_chart</span>
                         <span class="link-text">Calificaciones</span>
                     </li>
+                    <li onclick="location.href='admin_resultados.php'">
+                        <span class="material-icons">analytics</span>
+                        <span class="link-text">Resultados</span>
+                    </li>
                     <li onclick="location.href='../../logout.php'">
                         <span class="material-icons">logout</span>
                         <span class="link-text">Salir</span>

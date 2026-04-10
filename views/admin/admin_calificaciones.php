@@ -124,6 +124,7 @@ $formData = $viewData['formData'] ?? ['nombre' => '', 'categoria' => '', 'evento
                 <ul>
                     <li onclick="location.href='admin_dashboard.php'"><span class="material-icons">home</span><span class="link-text">Inicio</span></li>
                     <li class="active" onclick="location.href='admin_calificaciones.php'"><span class="material-icons">fact_check</span><span class="link-text">Calificaciones</span></li>
+                    <li onclick="location.href='admin_resultados.php'"><span class="material-icons">analytics</span><span class="link-text">Resultados</span></li>
                     <li onclick="location.href='../../logout.php'"><span class="material-icons">logout</span><span class="link-text">Salir</span></li>
                 </ul>
             </nav>
