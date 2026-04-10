@@ -20,6 +20,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
     <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?> | Panel de administracion</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link rel="stylesheet" href="https://framework.impulsagroup.com/assets/css/framework.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://framework.impulsagroup.com/assets/javascript/framework.js" defer></script>
     <style>
         @font-face { font-family:'Montserrat'; src:url('../../assets/institucionales/fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype'); font-weight:100 900; font-style:normal; font-display:swap; }
@@ -72,8 +73,12 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         .btn-secondary { background:#fff; color:#415066; border:1px solid #d6dfef; }
         .group-card { border:1px solid var(--border); border-radius:20px; padding:18px; background:#fff; }
         .group-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:16px; }
+        .group-actions { display:flex; align-items:center; gap:10px; }
         .group-title { margin:0; font-size:1.08rem; font-weight:800; color:#202633; }
         .group-meta { color:var(--muted); font-size:.9rem; margin-top:4px; }
+        .export-btn { width:40px; height:40px; border-radius:12px; border:1px solid #d6dfef; background:#fff; color:#2457cc; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:background .2s ease, border-color .2s ease, transform .2s ease; }
+        .export-btn:hover { background:#eef4ff; border-color:#bfd4ff; transform:translateY(-1px); }
+        .export-btn .material-icons { font-size:20px; }
         .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:16px; }
         .competitors-stack { display:flex; flex-direction:column; gap:16px; }
         .competitor-card { border:1px solid var(--border); border-radius:18px; background:#fbfdff; overflow:hidden; }
@@ -189,12 +194,23 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                     </section>
 
                     <?php if ($resultadosAgrupados): ?>
+                        <?php $grupoExportIndex = 0; ?>
                         <?php foreach ($resultadosAgrupados as $grupo): ?>
                             <section class="group-card">
                                 <div class="group-header">
                                     <div>
                                         <h2 class="group-title"><?= htmlspecialchars((string) ($grupo['formulario_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
                                         <div class="group-meta">Categoria: <strong><?= htmlspecialchars((string) ($grupo['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong> | Evento: <strong><?= htmlspecialchars((string) ($grupo['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></div>
+                                    </div>
+                                    <div class="group-actions">
+                                        <button
+                                            type="button"
+                                            class="export-btn"
+                                            title="Descargar resultados en Excel"
+                                            aria-label="Descargar resultados en Excel"
+                                            data-export-group-index="<?= (int) $grupoExportIndex ?>">
+                                            <span class="material-icons">download</span>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -297,6 +313,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                                     <?php endforeach; ?>
                                 </div>
                             </section>
+                            <?php $grupoExportIndex++; ?>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <section class="panel-card">
@@ -315,12 +332,14 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
     </div>
 
     <script>
+        const resultadosExportables = <?= json_encode($resultadosAgrupados, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
         const body = document.body;
         const sidebar = document.getElementById('sidebar');
         const collapseButton = document.getElementById('collapseSidebarBtn');
         const collapseIcon = document.getElementById('collapseIcon');
         const toggleSidebarButton = document.getElementById('toggleSidebarBtn');
         const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
+        const exportButtons = document.querySelectorAll('[data-export-group-index]');
 
         function syncSidebarState() {
             if (mobileBreakpoint.matches) {
@@ -358,6 +377,106 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         mobileBreakpoint.addEventListener('change', () => {
             body.classList.remove('sidebar-open');
             syncSidebarState();
+        });
+
+        function slugify(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '')
+                .toLowerCase();
+        }
+
+        function exportarGrupoAExcel(groupIndex) {
+            const grupo = resultadosExportables[groupIndex];
+            if (!grupo || typeof XLSX === 'undefined') {
+                return;
+            }
+
+            const rankingRows = (grupo.competidores_detalle || []).map((competidor) => {
+                const row = {
+                    Puesto: competidor.puesto ?? '',
+                    'N° Competidor': competidor.competidor_numero ?? '',
+                    'Nombre principal': competidor.nombre_mostrar ?? '',
+                    'Variantes de nombre': Array.isArray(competidor.nombres) ? competidor.nombres.join(' | ') : '',
+                    Evaluaciones: competidor.total_evaluaciones ?? 0,
+                    'Puntaje final': competidor.puntaje_final ?? 0,
+                    'Promedio final': competidor.promedio_final ?? 0,
+                };
+
+                (grupo.criterios || []).forEach((criterio) => {
+                    const clave = criterio.criterio_clave || '';
+                    const detalle = competidor.criterios_promedio?.[clave];
+                    row[`Promedio ${criterio.criterio_nombre}`] = detalle ? `${detalle.promedio_otorgado}/${detalle.puntaje_maximo}` : '-';
+                });
+
+                return row;
+            });
+
+            const detalleRows = [];
+            (grupo.competidores_detalle || []).forEach((competidor) => {
+                (competidor.evaluaciones || []).forEach((evaluacion) => {
+                    const row = {
+                        Grupo: `${grupo.formulario_nombre || ''} | ${grupo.categoria || ''}`,
+                        Puesto: competidor.puesto ?? '',
+                        'N° Competidor': competidor.competidor_numero ?? '',
+                        'Nombre principal': competidor.nombre_mostrar ?? '',
+                        'Nombre cargado': evaluacion.competidor_nombre ?? '',
+                        Jurado: evaluacion.jurado_display ?? '',
+                        Evento: evaluacion.evento_nombre ?? '',
+                        Categoria: evaluacion.categoria ?? '',
+                        'Puntaje total': evaluacion.puntaje_total ?? 0,
+                        Promedio: evaluacion.promedio ?? 0,
+                        Fecha: evaluacion.creado_en ?? '',
+                    };
+
+                    const detallesIndexados = {};
+                    (evaluacion.detalles || []).forEach((detalle) => {
+                        detallesIndexados[detalle.criterio_clave || ''] = detalle;
+                    });
+
+                    (grupo.criterios || []).forEach((criterio) => {
+                        const clave = criterio.criterio_clave || '';
+                        const detalle = detallesIndexados[clave];
+                        row[criterio.criterio_nombre] = detalle ? `${detalle.puntaje_otorgado}/${detalle.puntaje_maximo}` : '-';
+                    });
+
+                    detalleRows.push(row);
+                });
+            });
+
+            const resumenRows = [
+                { Campo: 'Formulario', Valor: grupo.formulario_nombre || '' },
+                { Campo: 'Categoria', Valor: grupo.categoria || '' },
+                { Campo: 'Evento', Valor: grupo.evento_nombre || '' },
+                { Campo: 'Evaluaciones', Valor: grupo.total_evaluaciones || 0 },
+                { Campo: 'Competidores', Valor: grupo.total_competidores || 0 },
+                { Campo: 'Jurados', Valor: grupo.total_jurados || 0 },
+                { Campo: 'Promedio general', Valor: grupo.promedio_general || 0 },
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(resumenRows), 'Resumen');
+            XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rankingRows), 'Ranking');
+            XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(detalleRows), 'Evaluaciones');
+
+            const fileName = [
+                'resultados',
+                slugify(grupo.formulario_nombre || 'formulario'),
+                slugify(grupo.categoria || 'categoria')
+            ].filter(Boolean).join('_') + '.xlsx';
+
+            XLSX.writeFile(workbook, fileName);
+        }
+
+        exportButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const groupIndex = parseInt(button.dataset.exportGroupIndex || '-1', 10);
+                if (!Number.isNaN(groupIndex) && groupIndex >= 0) {
+                    exportarGrupoAExcel(groupIndex);
+                }
+            });
         });
 
         function lockFrameworkTheme() {
