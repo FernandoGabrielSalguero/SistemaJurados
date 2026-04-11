@@ -15,10 +15,17 @@ class JuradoDashboardModel
     public function obtenerJurado(int $userId): array
     {
         $stmt = $this->db->prepare(
-            "SELECT id, usuario, rol, creado_en
+            "SELECT a.id,
+                    a.usuario,
+                    a.rol,
+                    a.creado_en,
+                    iu.nombre
              FROM auth
-             WHERE id = :id
-               AND rol = 'impulsa_jurado'
+             AS a
+             LEFT JOIN informacion_usuarios AS iu
+                ON iu.user_auth_id = a.id
+             WHERE a.id = :id
+               AND a.rol = 'impulsa_jurado'
              LIMIT 1"
         );
         $stmt->execute(['id' => $userId]);
@@ -136,6 +143,25 @@ class JuradoDashboardModel
             }
             throw $e;
         }
+    }
+
+    public function existeEvaluacionDuplicada(int $formularioId, int $juradoId, string $competidorNumero): bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id
+             FROM calificacion_evaluaciones
+             WHERE formulario_id = :formulario_id
+               AND jurado_id = :jurado_id
+               AND competidor_numero = :competidor_numero
+             LIMIT 1"
+        );
+        $stmt->execute([
+            'formulario_id' => $formularioId,
+            'jurado_id' => $juradoId,
+            'competidor_numero' => $competidorNumero,
+        ]);
+
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     private function tablaExiste(string $tabla): bool

@@ -12,7 +12,7 @@ $formulariosActivos = $viewData['formulariosActivos'] ?? [];
 $formularioSeleccionado = $viewData['formularioSeleccionado'] ?? null;
 $mensaje = $viewData['mensaje'] ?? '';
 $mensajeTipo = $viewData['mensajeTipo'] ?? 'success';
-$formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, 'competidor_numero' => '', 'competidor_nombre' => '', 'puntajes' => []];
+$formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, 'competidor_numero' => '', 'puntajes' => []];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -34,6 +34,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .navbar { background:rgba(255,255,255,.9); backdrop-filter:blur(14px); border-bottom:1px solid rgba(232,236,244,.96); display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 20px; position:sticky; top:0; z-index:20; }
         .navbar-title { font-size:1rem; font-weight:800; color:#1f2937; line-height:1.2; }
         .navbar-subtitle { color:var(--muted); font-size:.85rem; line-height:1.25; }
+        .navbar-user { font-size:1.22rem; font-weight:800; color:#172033; line-height:1.1; text-align:right; }
         .navbar-actions { display:flex; align-items:center; gap:12px; }
         .logout-link { display:inline-flex; align-items:center; gap:7px; border-radius:999px; background:#fff; color:var(--danger); border:1px solid #fecaca; padding:9px 14px; text-decoration:none; font-weight:700; font-size:.92rem; }
         .content { width:100%; max-width:none; margin:0; padding:24px 20px 32px; }
@@ -55,11 +56,16 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .form-field.full { grid-column:1 / -1; }
         .form-field label { font-size:.84rem; font-weight:700; color:#334155; }
         .form-field input[type="text"], .form-field select { width:100%; min-height:46px; border-radius:14px; border:1px solid #d6dfef; padding:10px 14px; background:#fff; color:#111827; font-size:.95rem; }
+        .form-shell { display:flex; flex-direction:column; gap:18px; }
+        .readonly-field { display:flex; align-items:center; min-height:46px; border-radius:14px; border:1px solid #d6dfef; padding:10px 14px; background:#f8fafc; color:#111827; font-size:.95rem; font-weight:700; }
         .summary-card,.criteria-card { border:1px solid var(--border); border-radius:18px; padding:16px; background:linear-gradient(180deg,#fff 0%,#fffef8 100%); }
         .summary-label,.criteria-meta { color:var(--muted); font-size:.82rem; margin-bottom:6px; }
         .summary-value { font-size:1.15rem; font-weight:800; line-height:1.2; }
         .criteria-title { font-weight:800; margin:0 0 4px; color:#202633; }
-        .questions-card .criteria-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        .slider-row { display:flex; align-items:center; gap:12px; }
+        .score-slider { flex:1; accent-color:#e4a800; }
+        .slider-value { min-width:54px; text-align:right; font-weight:800; color:#202633; }
         .score-summary { display:flex; align-items:center; justify-content:space-between; gap:14px; border-radius:18px; padding:18px; background:#0f172a; color:#fff; }
         .score-summary-label { color:rgba(255,255,255,.72); font-size:.88rem; }
         .score-blocks { display:flex; gap:24px; }
@@ -81,7 +87,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .empty-state h2 { margin:0 0 10px; font-size:1.2rem; font-weight:800; color:#202633; }
         .empty-state p { margin:0; color:var(--muted); line-height:1.6; }
         @media (max-width:1180px) { .form-layout { grid-template-columns:1fr; } .summary-aside { position:static; } .top-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-actions .navbar-subtitle { display:none; } }
+        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } }
         @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .logout-link span:last-child { display:none; } .score-summary-value { font-size:1.6rem; } .score-blocks { gap:16px; } }
     </style>
 </head>
@@ -93,7 +99,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 <div class="navbar-subtitle"><?= htmlspecialchars($pageSubtitle, ENT_QUOTES, 'UTF-8') ?></div>
             </div>
             <div class="navbar-actions">
-                <div class="navbar-subtitle"><?= htmlspecialchars($usuarioSesion, ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="navbar-user"><?= htmlspecialchars($usuarioSesion, ENT_QUOTES, 'UTF-8') ?></div>
                 <a href="../../logout.php" class="logout-link">
                     <span class="material-icons">logout</span>
                     <span>Salir</span>
@@ -117,18 +123,23 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 <?php endif; ?>
 
                 <?php if ($formularioSeleccionado): ?>
-                    <section class="panel-card">
+                    <section>
                         <h2 class="section-title">Completar evaluacion</h2>
-                        <p class="section-caption">Selecciona el formulario, completa el competidor y puntua cada criterio dentro del rango permitido.</p>
+                        <p class="section-caption">Selecciona el formulario, el competidor y puntua cada criterio dentro del rango permitido.</p>
 
                         <form method="post" class="form-stack">
                             <input type="hidden" name="guardar_evaluacion" value="1">
                             <div class="form-layout">
-                                <div class="form-main">
-                                    <div class="top-grid">
-                                        <div class="summary-card">
-                                            <div class="summary-label">Categoria</div>
+                                <div class="form-main form-shell">
+                                    <div class="panel-card">
+                                        <h3 class="section-title">Datos de la evaluacion</h3>
+                                        <div class="top-grid">
                                             <div class="form-field">
+                                                <label for="evento_nombre">Evento</label>
+                                                <div class="readonly-field" id="evento_nombre"><?= htmlspecialchars((string) ($formularioSeleccionado['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                            </div>
+                                            <div class="form-field">
+                                                <label for="categoria">Categoria</label>
                                                 <select id="categoria" name="categoria" onchange="window.location.href='?categoria=' + encodeURIComponent(this.value);">
                                                     <?php foreach ($categoriasDisponibles as $categoria): ?>
                                                         <option value="<?= htmlspecialchars((string) $categoria, ENT_QUOTES, 'UTF-8') ?>" <?= (string) ($formData['categoria'] ?? '') === (string) $categoria ? 'selected' : '' ?>>
@@ -137,10 +148,8 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
-                                        </div>
-                                        <div class="summary-card">
-                                            <div class="summary-label">Subcategoria</div>
                                             <div class="form-field">
+                                                <label for="formulario_id">Subcategoria</label>
                                                 <select id="formulario_id" name="formulario_id" onchange="window.location.href='?categoria=' + encodeURIComponent(document.getElementById('categoria').value) + '&formulario_id=' + this.value;">
                                                     <?php foreach ($subcategoriasDisponibles as $formulario): ?>
                                                         <option value="<?= (int) ($formulario['id'] ?? 0) ?>" <?= (int) ($formData['formulario_id'] ?? 0) === (int) ($formulario['id'] ?? 0) ? 'selected' : '' ?>>
@@ -149,27 +158,14 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
-                                        </div>
-                                        <div class="summary-card">
-                                            <div class="summary-label">Jurado</div>
-                                            <div class="summary-value" id="resumenJurado"><?= htmlspecialchars($usuarioSesion, ENT_QUOTES, 'UTF-8') ?></div>
-                                        </div>
-                                        <div class="summary-card">
-                                            <div class="summary-label">Competencia</div>
-                                            <div class="summary-value" id="resumenCompetencia"><?= htmlspecialchars((string) ($formularioSeleccionado['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="panel-card">
-                                        <h3 class="section-title">Datos del competidor</h3>
-                                        <div class="form-grid">
                                             <div class="form-field">
                                                 <label for="competidor_numero">N° del competidor</label>
-                                                <input type="text" id="competidor_numero" name="competidor_numero" value="<?= htmlspecialchars((string) ($formData['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. 24" required>
-                                            </div>
-                                            <div class="form-field">
-                                                <label for="competidor_nombre">Nombre del competidor</label>
-                                                <input type="text" id="competidor_nombre" name="competidor_nombre" value="<?= htmlspecialchars((string) ($formData['competidor_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Martina Perez" required>
+                                                <select id="competidor_numero" name="competidor_numero" required>
+                                                    <option value="">Seleccionar</option>
+                                                    <?php for ($i = 1; $i <= 2000; $i++): ?>
+                                                        <option value="<?= $i ?>" <?= (string) ($formData['competidor_numero'] ?? '') === (string) $i ? 'selected' : '' ?>><?= $i ?></option>
+                                                    <?php endfor; ?>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -180,19 +176,18 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                             <?php foreach (($formularioSeleccionado['criterios'] ?? []) as $criterio): ?>
                                                 <?php
                                                 $clave = (string) ($criterio['criterio_clave'] ?? '');
-                                                $maximo = (int) ($criterio['puntaje_maximo'] ?? 0);
-                                                $actual = (string) ($formData['puntajes'][$clave] ?? '0');
+                                                $maximo = number_format((float) ($criterio['puntaje_maximo'] ?? 0), 1, '.', '');
+                                                $actual = number_format((float) ($formData['puntajes'][$clave] ?? '0'), 1, '.', '');
                                                 ?>
                                                 <div class="criteria-card">
                                                     <div class="criteria-title"><?= htmlspecialchars((string) ($criterio['criterio_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                                    <div class="criteria-meta">Puntaje maximo: <?= $maximo ?></div>
+                                                    <div class="criteria-meta">Puntaje maximo: <?= htmlspecialchars(str_replace('.', ',', $maximo), ENT_QUOTES, 'UTF-8') ?></div>
                                                     <div class="form-field">
                                                         <label for="puntaje_<?= htmlspecialchars($clave, ENT_QUOTES, 'UTF-8') ?>">Puntaje otorgado</label>
-                                                        <select id="puntaje_<?= htmlspecialchars($clave, ENT_QUOTES, 'UTF-8') ?>" name="puntajes[<?= htmlspecialchars($clave, ENT_QUOTES, 'UTF-8') ?>]" class="score-select" required>
-                                                            <?php for ($i = 0; $i <= $maximo; $i++): ?>
-                                                                <option value="<?= $i ?>" <?= $actual === (string) $i ? 'selected' : '' ?>><?= $i ?></option>
-                                                            <?php endfor; ?>
-                                                        </select>
+                                                        <div class="slider-row">
+                                                            <input type="range" id="puntaje_<?= htmlspecialchars($clave, ENT_QUOTES, 'UTF-8') ?>" name="puntajes[<?= htmlspecialchars($clave, ENT_QUOTES, 'UTF-8') ?>]" class="score-slider" min="0" max="<?= htmlspecialchars($maximo, ENT_QUOTES, 'UTF-8') ?>" step="0.1" value="<?= htmlspecialchars($actual, ENT_QUOTES, 'UTF-8') ?>" required>
+                                                            <span class="slider-value" data-score-output><?= htmlspecialchars(str_replace('.', ',', $actual), ENT_QUOTES, 'UTF-8') ?></span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             <?php endforeach; ?>
@@ -267,7 +262,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
     </div>
 
     <script>
-        const scoreSelects = document.querySelectorAll('.score-select');
+        const scoreSelects = document.querySelectorAll('.score-slider');
         const puntajeTotal = document.getElementById('puntajeTotal');
         const puntajePromedio = document.getElementById('puntajePromedio');
         const competidorNumeroInput = document.getElementById('competidor_numero');
@@ -277,15 +272,23 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         const resumenCategoria = document.getElementById('resumenCategoria');
         const categoriaSelect = document.getElementById('categoria');
 
+        function formatScore(value, decimals = 1) {
+            return Number(value || 0).toFixed(decimals).replace('.', ',');
+        }
+
         function actualizarResumen() {
             let total = 0;
             scoreSelects.forEach((select) => {
-                const value = parseInt(select.value || '0', 10);
+                const value = parseFloat((select.value || '0').replace(',', '.'));
                 total += Number.isNaN(value) ? 0 : value;
+                const output = select.closest('.slider-row')?.querySelector('[data-score-output]');
+                if (output) {
+                    output.textContent = formatScore(value, 1);
+                }
             });
             const promedio = scoreSelects.length > 0 ? (total / scoreSelects.length) : 0;
-            if (puntajeTotal) puntajeTotal.textContent = String(total);
-            if (puntajePromedio) puntajePromedio.textContent = promedio.toFixed(2);
+            if (puntajeTotal) puntajeTotal.textContent = formatScore(total, 1);
+            if (puntajePromedio) puntajePromedio.textContent = formatScore(promedio, 2);
             if (resumenCompetidorNumero && competidorNumeroInput) {
                 const numero = competidorNumeroInput.value.trim();
                 resumenCompetidorNumero.textContent = numero !== '' ? numero : 'Sin completar';
@@ -298,8 +301,11 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
             }
         }
 
-        scoreSelects.forEach((select) => select.addEventListener('change', actualizarResumen));
-        competidorNumeroInput?.addEventListener('input', actualizarResumen);
+        scoreSelects.forEach((select) => {
+            select.addEventListener('input', actualizarResumen);
+            select.addEventListener('change', actualizarResumen);
+        });
+        competidorNumeroInput?.addEventListener('change', actualizarResumen);
 
         function lockFrameworkTheme() {
             const root = document.documentElement;

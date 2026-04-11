@@ -32,9 +32,22 @@ $formData = [
     'categoria' => $categoriaSeleccionada,
     'formulario_id' => isset($_GET['formulario_id']) ? (int) $_GET['formulario_id'] : 0,
     'competidor_numero' => '',
-    'competidor_nombre' => '',
     'puntajes' => [],
 ];
+
+function juradoDashboardParseDecimal(mixed $valor): ?float
+{
+    if ($valor === null) {
+        return null;
+    }
+
+    $normalizado = str_replace(',', '.', trim((string) $valor));
+    if ($normalizado === '' || !is_numeric($normalizado)) {
+        return null;
+    }
+
+    return round((float) $normalizado, 1);
+}
 
 function juradoDashboardRedirect(string $categoria = '', int $formularioId = 0): void
 {
@@ -96,7 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
     $formData['categoria'] = trim((string) ($_POST['categoria'] ?? $categoriaSeleccionada));
     $formData['formulario_id'] = (int) ($_POST['formulario_id'] ?? 0);
     $formData['competidor_numero'] = trim((string) ($_POST['competidor_numero'] ?? ''));
-    $formData['competidor_nombre'] = trim((string) ($_POST['competidor_nombre'] ?? ''));
 
     $categoriaSeleccionada = $formData['categoria'];
     $subcategoriasDisponibles = array_values(array_filter(
@@ -125,8 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
     } elseif ($formularioSeleccionado === null) {
         $mensaje = 'Selecciona una subcategoria valida.';
         $mensajeTipo = 'danger';
-    } elseif ($formData['competidor_numero'] === '' || $formData['competidor_nombre'] === '') {
-        $mensaje = 'Completa el numero y el nombre del competidor.';
+    } elseif ($formData['competidor_numero'] === '') {
+        $mensaje = 'Selecciona el numero del competidor.';
+        $mensajeTipo = 'danger';
+    } elseif ($model->existeEvaluacionDuplicada((int) $formularioSeleccionado['id'], $userId, $formData['competidor_numero'])) {
+        $mensaje = 'Este jurado ya califico ese numero de competidor en la categoria y subcategoria seleccionadas.';
         $mensajeTipo = 'danger';
     } else {
         $detalles = [];
@@ -136,10 +151,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
         foreach ($criterios as $criterio) {
             $clave = (string) ($criterio['criterio_clave'] ?? '');
             $valorCrudo = $_POST['puntajes'][$clave] ?? null;
-            $valor = filter_var($valorCrudo, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-            $maximo = (int) ($criterio['puntaje_maximo'] ?? 0);
+            $valor = juradoDashboardParseDecimal($valorCrudo);
+            $maximo = round((float) ($criterio['puntaje_maximo'] ?? 0), 1);
 
-            if ($valor === false || $valor > $maximo) {
+            if ($valor === null || $valor < 0 || $valor > $maximo) {
                 $mensaje = 'Uno o mas puntajes no son validos para el criterio seleccionado.';
                 $mensajeTipo = 'danger';
                 break;
@@ -148,10 +163,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
             $detalles[] = [
                 'criterio_clave' => $clave,
                 'criterio_nombre' => (string) ($criterio['criterio_nombre'] ?? ''),
-                'puntaje_maximo' => (float) $maximo,
-                'puntaje_otorgado' => (float) $valor,
+                'puntaje_maximo' => $maximo,
+                'puntaje_otorgado' => $valor,
             ];
-            $puntajeTotal += (float) $valor;
+            $puntajeTotal += $valor;
         }
 
         if ($mensaje === '') {
@@ -162,10 +177,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
                     'formulario_id' => (int) $formularioSeleccionado['id'],
                     'jurado_id' => $userId,
                     'competidor_numero' => $formData['competidor_numero'],
-                    'competidor_nombre' => $formData['competidor_nombre'],
+                    'competidor_nombre' => 'sin nombre',
                     'categoria' => (string) ($formularioSeleccionado['categoria'] ?? ''),
                     'evento_nombre' => (string) ($formularioSeleccionado['evento_nombre'] ?? ''),
-                    'puntaje_total' => $puntajeTotal,
+                    'puntaje_total' => round($puntajeTotal, 2),
                     'promedio' => $promedio,
                     'detalles' => $detalles,
                 ]);
@@ -185,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_evaluacion'])
 
 $viewData = [
     'jurado' => $jurado,
-    'usuarioSesion' => (string) ($jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado'),
+    'usuarioSesion' => (string) ($jurado['nombre'] ?? $jurado['usuario'] ?? $_SESSION['usuario'] ?? 'Jurado'),
     'pageTitle' => 'Formulario de calificacion',
     'pageSubtitle' => 'Selecciona categoria y subcategoria para completar la evaluacion del competidor.',
     'estadoTablas' => $estadoTablas,
