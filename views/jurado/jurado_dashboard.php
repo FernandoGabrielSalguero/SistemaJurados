@@ -158,7 +158,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .style-field.full { grid-column:1 / -1; }
         .style-field label { font-size:.8rem; font-weight:700; color:var(--muted); }
         .style-field input[type="color"] { width:100%; height:42px; border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:4px; cursor:pointer; }
-        .style-field input[type="range"], .style-field select { width:100%; }
+        .style-field input[type="range"] { width:100%; }
         .style-range-value { font-size:.82rem; font-weight:800; color:var(--text); }
         .style-actions { display:flex; gap:10px; padding-top:4px; }
         .style-btn-secondary { border:1px solid var(--border); border-radius:14px; background:var(--surface); color:var(--text); padding:11px 14px; font-weight:700; cursor:pointer; flex:1; }
@@ -341,7 +341,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         <div class="style-drawer-header">
             <div>
                 <h3 class="style-drawer-title">Personalizar dashboard</h3>
-                <p class="style-drawer-caption">Ajustá colores, tipografía, layout y densidad visual en tiempo real.</p>
+                <p class="style-drawer-caption">Elegí un preset visual y ajustá solo el tamaño de la letra.</p>
             </div>
             <button type="button" class="style-drawer-close" id="dashboardStyleClose" aria-label="Cerrar panel">
                 <span class="material-icons">close</span>
@@ -363,148 +363,28 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                         <div class="style-preset-swatch" style="background:linear-gradient(90deg,#f3fff6,#22c55e,#14532d)"></div>
                         Forest
                     </button>
+                    <button type="button" class="style-preset-btn" data-preset="sunset">
+                        <div class="style-preset-swatch" style="background:linear-gradient(90deg,#fff7ed,#f97316,#7c2d12)"></div>
+                        Sunset
+                    </button>
+                    <button type="button" class="style-preset-btn" data-preset="ocean">
+                        <div class="style-preset-swatch" style="background:linear-gradient(90deg,#ecfeff,#06b6d4,#164e63)"></div>
+                        Ocean
+                    </button>
+                    <button type="button" class="style-preset-btn" data-preset="contrast">
+                        <div class="style-preset-swatch" style="background:linear-gradient(90deg,#000000,#fde047,#ffffff)"></div>
+                        Alto contraste
+                    </button>
                 </div>
             </section>
 
             <section class="style-group">
-                <h4>Colores base</h4>
+                <h4>Lectura</h4>
                 <div class="style-grid">
-                    <div class="style-field">
-                        <label for="stylePageBgStart">Fondo inicio</label>
-                        <input type="color" id="stylePageBgStart" data-theme-control="pageBgStart">
-                    </div>
-                    <div class="style-field">
-                        <label for="stylePageBgEnd">Fondo fin</label>
-                        <input type="color" id="stylePageBgEnd" data-theme-control="pageBgEnd">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleSurface">Tarjetas</label>
-                        <input type="color" id="styleSurface" data-theme-control="surface">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleBorder">Bordes</label>
-                        <input type="color" id="styleBorder" data-theme-control="border">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleText">Texto principal</label>
-                        <input type="color" id="styleText" data-theme-control="text">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleMuted">Texto secundario</label>
-                        <input type="color" id="styleMuted" data-theme-control="muted">
-                    </div>
-                </div>
-            </section>
-
-            <section class="style-group">
-                <h4>Acciones y acentos</h4>
-                <div class="style-grid">
-                    <div class="style-field">
-                        <label for="stylePrimary">Primario inicio</label>
-                        <input type="color" id="stylePrimary" data-theme-control="primary">
-                    </div>
-                    <div class="style-field">
-                        <label for="stylePrimaryStrong">Primario fin</label>
-                        <input type="color" id="stylePrimaryStrong" data-theme-control="primaryStrong">
-                    </div>
-                    <div class="style-field">
-                        <label for="stylePrimaryText">Texto botones</label>
-                        <input type="color" id="stylePrimaryText" data-theme-control="primaryText">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleSummaryBg">Resumen fondo</label>
-                        <input type="color" id="styleSummaryBg" data-theme-control="summaryBg">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleSummaryText">Resumen texto</label>
-                        <input type="color" id="styleSummaryText" data-theme-control="summaryText">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleSummaryMuted">Resumen secundario</label>
-                        <input type="color" id="styleSummaryMuted" data-theme-control="summaryMuted">
-                    </div>
-                </div>
-            </section>
-
-            <section class="style-group">
-                <h4>Header y campos</h4>
-                <div class="style-grid">
-                    <div class="style-field">
-                        <label for="styleNavbarBg">Header fondo</label>
-                        <input type="color" id="styleNavbarBg" data-theme-control="navbarBg">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleNavbarBorder">Header borde</label>
-                        <input type="color" id="styleNavbarBorder" data-theme-control="navbarBorder">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleFieldBg">Campos editables</label>
-                        <input type="color" id="styleFieldBg" data-theme-control="fieldBg">
-                    </div>
-                    <div class="style-field">
-                        <label for="styleReadonlyBg">Campos lectura</label>
-                        <input type="color" id="styleReadonlyBg" data-theme-control="fieldReadonlyBg">
-                    </div>
-                </div>
-            </section>
-
-            <section class="style-group">
-                <h4>Tipografia y layout</h4>
-                <div class="style-grid">
-                    <div class="style-field">
-                        <label for="styleFontFamily">Tipografia</label>
-                        <select id="styleFontFamily" data-theme-control="fontFamily">
-                            <option value="'Montserrat',sans-serif">Montserrat</option>
-                            <option value="system-ui,sans-serif">System UI</option>
-                            <option value="Georgia,serif">Serif</option>
-                            <option value="'Trebuchet MS',sans-serif">Trebuchet</option>
-                        </select>
-                    </div>
-                    <div class="style-field">
-                        <label for="styleContentWidth">Ancho del layout</label>
-                        <input type="range" id="styleContentWidth" data-theme-control="contentMaxWidth" min="960" max="1800" step="20">
-                        <span class="style-range-value" data-theme-display="contentMaxWidth"></span>
-                    </div>
-                    <div class="style-field">
+                    <div class="style-field full">
                         <label for="styleBaseFontSize">Tamaño base</label>
                         <input type="range" id="styleBaseFontSize" data-theme-control="baseFontSize" min="12" max="18" step="1">
                         <span class="style-range-value" data-theme-display="baseFontSize"></span>
-                    </div>
-                    <div class="style-field">
-                        <label for="stylePanelPadding">Espaciado tarjetas</label>
-                        <input type="range" id="stylePanelPadding" data-theme-control="panelPadding" min="16" max="36" step="1">
-                        <span class="style-range-value" data-theme-display="panelPadding"></span>
-                    </div>
-                    <div class="style-field">
-                        <label for="styleCardRadius">Radio tarjetas</label>
-                        <input type="range" id="styleCardRadius" data-theme-control="cardRadius" min="10" max="32" step="1">
-                        <span class="style-range-value" data-theme-display="cardRadius"></span>
-                    </div>
-                    <div class="style-field">
-                        <label for="styleControlRadius">Radio controles</label>
-                        <input type="range" id="styleControlRadius" data-theme-control="controlRadius" min="8" max="24" step="1">
-                        <span class="style-range-value" data-theme-display="controlRadius"></span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="style-group">
-                <h4>Sombras y profundidad</h4>
-                <div class="style-grid">
-                    <div class="style-field">
-                        <label for="styleShadowBlur">Difusion sombra</label>
-                        <input type="range" id="styleShadowBlur" data-theme-control="shadowBlur" min="10" max="60" step="1">
-                        <span class="style-range-value" data-theme-display="shadowBlur"></span>
-                    </div>
-                    <div class="style-field">
-                        <label for="styleShadowY">Altura sombra</label>
-                        <input type="range" id="styleShadowY" data-theme-control="shadowY" min="0" max="28" step="1">
-                        <span class="style-range-value" data-theme-display="shadowY"></span>
-                    </div>
-                    <div class="style-field">
-                        <label for="styleShadowAlpha">Opacidad sombra</label>
-                        <input type="range" id="styleShadowAlpha" data-theme-control="shadowAlpha" min="0.02" max="0.35" step="0.01">
-                        <span class="style-range-value" data-theme-display="shadowAlpha"></span>
                     </div>
                 </div>
             </section>
@@ -613,7 +493,6 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         const serverMessageType = <?= json_encode((string) $mensajeTipo, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         const themeStorageKey = 'jurado_dashboard_custom_theme_v1';
         const dashboardThemeDefaults = {
-            fontFamily: "'Montserrat',sans-serif",
             baseFontSize: 14,
             pageBgStart: '#fffdf7',
             pageBgEnd: '#f7f8fc',
@@ -684,6 +563,72 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 shadowY: 12,
                 shadowBlur: 34,
                 shadowAlpha: 0.16
+            },
+            sunset: {
+                ...dashboardThemeDefaults,
+                pageBgStart: '#fff7ed',
+                pageBgEnd: '#ffedd5',
+                surface: '#fffaf5',
+                border: '#fdba74',
+                text: '#7c2d12',
+                muted: '#9a3412',
+                primary: '#f97316',
+                primaryStrong: '#fb923c',
+                primaryText: '#fff7ed',
+                navbarBg: '#fff7ed',
+                navbarBorder: '#fdba74',
+                summaryBg: '#7c2d12',
+                summaryText: '#fff7ed',
+                summaryMuted: '#fdba74',
+                fieldBg: '#ffffff',
+                fieldReadonlyBg: '#fff7ed',
+                shadowY: 12,
+                shadowBlur: 30,
+                shadowAlpha: 0.14
+            },
+            ocean: {
+                ...dashboardThemeDefaults,
+                pageBgStart: '#ecfeff',
+                pageBgEnd: '#cffafe',
+                surface: '#f8feff',
+                border: '#67e8f9',
+                text: '#164e63',
+                muted: '#0f766e',
+                primary: '#06b6d4',
+                primaryStrong: '#0891b2',
+                primaryText: '#ecfeff',
+                navbarBg: '#ecfeff',
+                navbarBorder: '#67e8f9',
+                summaryBg: '#164e63',
+                summaryText: '#ecfeff',
+                summaryMuted: '#67e8f9',
+                fieldBg: '#ffffff',
+                fieldReadonlyBg: '#ecfeff',
+                shadowY: 12,
+                shadowBlur: 30,
+                shadowAlpha: 0.14
+            },
+            contrast: {
+                ...dashboardThemeDefaults,
+                pageBgStart: '#000000',
+                pageBgEnd: '#111111',
+                surface: '#000000',
+                border: '#fde047',
+                text: '#ffffff',
+                muted: '#fef08a',
+                primary: '#fde047',
+                primaryStrong: '#facc15',
+                primaryText: '#000000',
+                navbarBg: '#000000',
+                navbarBorder: '#fde047',
+                summaryBg: '#ffffff',
+                summaryText: '#000000',
+                summaryMuted: '#374151',
+                fieldBg: '#111111',
+                fieldReadonlyBg: '#1a1a1a',
+                shadowY: 0,
+                shadowBlur: 0,
+                shadowAlpha: 0
             }
         };
         let dashboardThemeState = { ...dashboardThemeDefaults };
@@ -708,7 +653,6 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         function applyDashboardTheme(theme, persist = true) {
             dashboardThemeState = { ...dashboardThemeDefaults, ...theme };
             const root = document.documentElement;
-            root.style.setProperty('--font-family', dashboardThemeState.fontFamily);
             root.style.setProperty('--base-font-size', `${dashboardThemeState.baseFontSize}px`);
             root.style.setProperty('--page-bg-start', dashboardThemeState.pageBgStart);
             root.style.setProperty('--page-bg-end', dashboardThemeState.pageBgEnd);
@@ -769,11 +713,8 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         }
 
         function normalizeThemeValue(key, value) {
-            if (['baseFontSize', 'panelPadding', 'cardRadius', 'controlRadius', 'contentMaxWidth', 'shadowY', 'shadowBlur'].includes(key)) {
+            if (key === 'baseFontSize') {
                 return parseInt(String(value), 10);
-            }
-            if (key === 'shadowAlpha') {
-                return parseFloat(String(value));
             }
             return value;
         }
