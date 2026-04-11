@@ -80,14 +80,29 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         .export-btn:hover { background:#eef4ff; border-color:#bfd4ff; transform:translateY(-1px); }
         .export-btn .material-icons { font-size:20px; }
         .summary-grid { grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:16px; }
-        .competitors-stack { display:flex; flex-direction:column; gap:16px; }
-        .competitor-card { border:1px solid var(--border); border-radius:18px; background:#fbfdff; overflow:hidden; }
-        .competitor-header { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; padding:16px 18px; border-bottom:1px solid var(--border); background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%); }
-        .competitor-title { margin:0; font-size:1rem; font-weight:800; color:#202633; }
-        .competitor-meta { color:var(--muted); font-size:.88rem; margin-top:4px; }
-        .competitor-stats { display:flex; flex-wrap:wrap; gap:10px; }
-        .stat-chip { display:inline-flex; align-items:center; border-radius:999px; background:#eef4ff; color:#2457cc; padding:7px 11px; font-size:.76rem; font-weight:700; }
-        .ranking-chip { background:#dbeafe; color:#1d4ed8; }
+        .results-table-wrap { border:1px solid var(--border); border-radius:18px; overflow:hidden; background:#fff; }
+        .results-table { width:100%; min-width:1100px; border-collapse:collapse; }
+        .results-table thead th { background:#f8fafc; color:#5b6472; border-bottom:1px solid var(--border); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; padding:12px 14px; text-align:left; }
+        .results-table tbody td { padding:14px; font-size:.9rem; vertical-align:middle; border-bottom:1px solid var(--border); }
+        .results-table tbody tr:last-child td { border-bottom:0; }
+        .results-table tbody tr:hover { background:#fbfdff; }
+        .competitor-cell strong { display:block; color:#202633; font-size:.98rem; }
+        .competitor-cell span { display:block; margin-top:4px; color:var(--muted); font-size:.82rem; line-height:1.4; }
+        .criterion-score { font-weight:700; color:#202633; white-space:nowrap; }
+        .ranking-badge { display:inline-flex; align-items:center; border-radius:999px; background:#dbeafe; color:#1d4ed8; padding:7px 10px; font-size:.76rem; font-weight:800; }
+        .table-action-btn { width:38px; height:38px; border-radius:12px; border:1px solid #d6dfef; background:#fff; color:#2457cc; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:background .2s ease,border-color .2s ease,transform .2s ease; }
+        .table-action-btn:hover { background:#eef4ff; border-color:#bfd4ff; transform:translateY(-1px); }
+        .table-action-btn .material-icons { font-size:20px; }
+        .modal.hidden { display:none; }
+        .modal.results-modal { position:fixed; inset:0; z-index:70; background:rgba(15,23,42,.48); backdrop-filter:blur(4px); padding:24px; overflow:auto; }
+        .results-modal-content { width:min(1240px,100%); margin:0 auto; background:#fff; border-radius:24px; border:1px solid var(--border); box-shadow:0 24px 60px rgba(15,23,42,.22); overflow:hidden; }
+        .results-modal-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:22px 24px 18px; border-bottom:1px solid var(--border); }
+        .results-modal-title { margin:0; font-size:1.18rem; font-weight:800; color:#202633; }
+        .results-modal-meta { margin-top:6px; color:var(--muted); font-size:.9rem; line-height:1.5; }
+        .results-modal-close { width:40px; height:40px; border-radius:12px; border:1px solid #d6dfef; background:#fff; color:#2457cc; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+        .results-modal-body { padding:20px 24px 24px; display:flex; flex-direction:column; gap:16px; }
+        .results-modal-stats { display:flex; flex-wrap:wrap; gap:10px; }
+        .results-modal-empty { border:1px dashed var(--border); border-radius:16px; padding:24px; text-align:center; color:var(--muted); background:#fbfdff; }
         .table-responsive { border:1px solid var(--border); border-radius:16px; overflow-x:auto; }
         .table { width:100%; min-width:1180px; border-collapse:collapse; }
         .table thead th { background:#f8fafc; color:#5b6472; border-bottom:1px solid var(--border); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; padding:12px 14px; text-align:left; }
@@ -105,7 +120,7 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         body.sidebar-collapsed .logo-text, body.sidebar-collapsed .link-text { display:none; }
         body.sidebar-collapsed .sidebar-header, body.sidebar-collapsed .sidebar-menu li { justify-content:center; padding-inline:10px; }
         @media (max-width:1180px) { .metrics-grid,.filters-grid,.summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .group-header { flex-direction:column; } }
-        @media (max-width:860px) { .sidebar { position:fixed; top:0; left:0; bottom:0; transform:translateX(-100%); } body.sidebar-open .sidebar { transform:translateX(0); } .main,body.sidebar-collapsed .main { width:100%; max-width:100%; } .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; } .metrics-grid,.filters-grid,.summary-grid { grid-template-columns:1fr; } .filter-actions { align-items:stretch; flex-direction:column; } .btn-primary,.btn-secondary { width:100%; } .table { min-width:940px; } .navbar-actions .navbar-subtitle { display:none; } }
+        @media (max-width:860px) { .sidebar { position:fixed; top:0; left:0; bottom:0; transform:translateX(-100%); } body.sidebar-open .sidebar { transform:translateX(0); } .main,body.sidebar-collapsed .main { width:100%; max-width:100%; } .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; } .metrics-grid,.filters-grid,.summary-grid { grid-template-columns:1fr; } .filter-actions { align-items:stretch; flex-direction:column; } .btn-primary,.btn-secondary { width:100%; } .results-table,.table { min-width:940px; } .navbar-actions .navbar-subtitle { display:none; } .results-modal { padding:12px; } .results-modal-header,.results-modal-body { padding-inline:16px; } }
         @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .logout-link span:last-child { display:none; } }
     </style>
 </head>
@@ -221,96 +236,66 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                                     <div class="summary-card"><div class="summary-label">Promedio general</div><div class="summary-value"><?= htmlspecialchars(number_format((float) ($grupo['promedio_general'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></div></div>
                                 </div>
 
-                                <div class="competitors-stack">
-                                    <?php foreach (($grupo['competidores_detalle'] ?? []) as $competidor): ?>
-                                        <article class="competitor-card">
-                                            <div class="competitor-header">
-                                                <div>
-                                                    <h3 class="competitor-title">Competidor #<?= htmlspecialchars((string) ($competidor['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
-                                                    <div class="competitor-meta">
-                                                        Nombre principal: <strong><?= htmlspecialchars((string) ($competidor['nombre_mostrar'] ?? 'Sin nombre'), ENT_QUOTES, 'UTF-8') ?></strong>
-                                                        <?php if (!empty($competidor['nombres']) && count($competidor['nombres']) > 1): ?>
-                                                            | Variantes cargadas: <?= htmlspecialchars(implode(' | ', $competidor['nombres']), ENT_QUOTES, 'UTF-8') ?>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                                <div class="competitor-stats">
-                                                    <span class="stat-chip ranking-chip">Puesto: <?= (int) ($competidor['puesto'] ?? 0) ?></span>
-                                                    <span class="stat-chip">Evaluaciones: <?= (int) ($competidor['total_evaluaciones'] ?? 0) ?></span>
-                                                    <span class="stat-chip">Promedio final: <?= htmlspecialchars(number_format((float) ($competidor['promedio_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                                    <span class="stat-chip">Puntaje final: <?= htmlspecialchars(number_format((float) ($competidor['puntaje_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                                </div>
-                                            </div>
-
-                                            <div class="table-responsive">
-                                                <table class="table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>ID</th>
-                                                            <th>Jurado</th>
-                                                            <th>Nombre cargado</th>
-                                                            <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
-                                                                <th><?= htmlspecialchars((string) ($criterio['criterio_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></th>
-                                                            <?php endforeach; ?>
-                                                            <th>Total</th>
-                                                            <th>Promedio</th>
-                                                            <th>Fecha</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <?php foreach (($competidor['evaluaciones'] ?? []) as $evaluacion): ?>
-                                                            <?php
-                                                            $detallesIndexados = [];
-                                                            foreach (($evaluacion['detalles'] ?? []) as $detalle) {
-                                                                $detallesIndexados[(string) ($detalle['criterio_clave'] ?? '')] = $detalle;
-                                                            }
-                                                            ?>
-                                                            <tr>
-                                                                <td><?= (int) ($evaluacion['id'] ?? 0) ?></td>
-                                                                <td><?= htmlspecialchars((string) ($evaluacion['jurado_display'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                                <td><?= htmlspecialchars((string) ($evaluacion['competidor_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                                <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
-                                                                    <?php
-                                                                    $criterioClave = (string) ($criterio['criterio_clave'] ?? '');
-                                                                    $detalle = $detallesIndexados[$criterioClave] ?? null;
-                                                                    ?>
-                                                                    <td>
-                                                                        <?php if ($detalle): ?>
-                                                                            <?= htmlspecialchars(number_format((float) ($detalle['puntaje_otorgado'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>/<?= htmlspecialchars(number_format((float) ($detalle['puntaje_maximo'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>
-                                                                        <?php else: ?>
-                                                                            -
-                                                                        <?php endif; ?>
-                                                                    </td>
-                                                                <?php endforeach; ?>
-                                                                <td><strong><?= htmlspecialchars(number_format((float) ($evaluacion['puntaje_total'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
-                                                                <td><?= htmlspecialchars(number_format((float) ($evaluacion['promedio'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                                <td><?= htmlspecialchars((string) ($evaluacion['creado_en'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                                            </tr>
-                                                        <?php endforeach; ?>
-                                                        <tr class="final-row">
-                                                            <td colspan="3">Promedio final del competidor</td>
-                                                            <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
-                                                                <?php
-                                                                $criterioClave = (string) ($criterio['criterio_clave'] ?? '');
-                                                                $criterioPromedio = $competidor['criterios_promedio'][$criterioClave] ?? null;
-                                                                ?>
-                                                                <td>
-                                                                    <?php if ($criterioPromedio): ?>
-                                                                        <?= htmlspecialchars(number_format((float) ($criterioPromedio['promedio_otorgado'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?>/<?= htmlspecialchars(number_format((float) ($criterioPromedio['puntaje_maximo'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>
-                                                                    <?php else: ?>
-                                                                        -
-                                                                    <?php endif; ?>
-                                                                </td>
-                                                            <?php endforeach; ?>
-                                                            <td><strong><?= htmlspecialchars(number_format((float) ($competidor['puntaje_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
-                                                            <td><strong><?= htmlspecialchars(number_format((float) ($competidor['promedio_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
-                                                            <td>Puesto <?= (int) ($competidor['puesto'] ?? 0) ?></td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </article>
-                                    <?php endforeach; ?>
+                                <div class="results-table-wrap">
+                                    <table class="results-table">
+                                        <thead>
+                                            <tr>
+                                                <th>N° competidor</th>
+                                                <th>Referencia</th>
+                                                <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
+                                                    <th><?= htmlspecialchars((string) ($criterio['criterio_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></th>
+                                                <?php endforeach; ?>
+                                                <th>Puntaje final</th>
+                                                <th>Promedio final</th>
+                                                <th>Puesto</th>
+                                                <th>Detalle</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach (($grupo['competidores_detalle'] ?? []) as $competidor): ?>
+                                                <tr>
+                                                    <td><strong>#<?= htmlspecialchars((string) ($competidor['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                                    <td class="competitor-cell">
+                                                        <strong><?= htmlspecialchars((string) ($competidor['nombre_mostrar'] ?? 'Sin nombre'), ENT_QUOTES, 'UTF-8') ?></strong>
+                                                        <span>
+                                                            Evaluaciones: <?= (int) ($competidor['total_evaluaciones'] ?? 0) ?>
+                                                            <?php if (!empty($competidor['nombres']) && count($competidor['nombres']) > 1): ?>
+                                                                | Variantes: <?= htmlspecialchars(implode(' | ', $competidor['nombres']), ENT_QUOTES, 'UTF-8') ?>
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </td>
+                                                    <?php foreach (($grupo['criterios'] ?? []) as $criterio): ?>
+                                                        <?php
+                                                        $criterioClave = (string) ($criterio['criterio_clave'] ?? '');
+                                                        $criterioPromedio = $competidor['criterios_promedio'][$criterioClave] ?? null;
+                                                        ?>
+                                                        <td class="criterion-score">
+                                                            <?php if ($criterioPromedio): ?>
+                                                                <?= htmlspecialchars(number_format((float) ($criterioPromedio['promedio_otorgado'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?>/<?= htmlspecialchars(number_format((float) ($criterioPromedio['puntaje_maximo'] ?? 0), 0, '.', ''), ENT_QUOTES, 'UTF-8') ?>
+                                                            <?php else: ?>
+                                                                -
+                                                            <?php endif; ?>
+                                                        </td>
+                                                    <?php endforeach; ?>
+                                                    <td><strong><?= htmlspecialchars(number_format((float) ($competidor['puntaje_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                                    <td><strong><?= htmlspecialchars(number_format((float) ($competidor['promedio_final'] ?? 0), 2, '.', ''), ENT_QUOTES, 'UTF-8') ?></strong></td>
+                                                    <td><span class="ranking-badge">Puesto <?= (int) ($competidor['puesto'] ?? 0) ?></span></td>
+                                                    <td>
+                                                        <button
+                                                            type="button"
+                                                            class="table-action-btn"
+                                                            title="Ver detalle de jurados"
+                                                            aria-label="Ver detalle de jurados"
+                                                            data-open-competitor-modal
+                                                            data-group-index="<?= (int) $grupoExportIndex ?>"
+                                                            data-competitor-number="<?= htmlspecialchars((string) ($competidor['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                                            <span class="material-icons">visibility</span>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </section>
                             <?php $grupoExportIndex++; ?>
@@ -331,6 +316,30 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         </div>
     </div>
 
+    <div id="competitorDetailModal" class="modal results-modal hidden">
+        <div class="results-modal-content">
+            <div class="results-modal-header">
+                <div>
+                    <h3 class="results-modal-title" id="modalCompetitorTitle">Detalle del competidor</h3>
+                    <div class="results-modal-meta" id="modalCompetitorMeta"></div>
+                </div>
+                <button type="button" class="results-modal-close" id="closeCompetitorModal" aria-label="Cerrar detalle">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="results-modal-body">
+                <div class="results-modal-stats" id="modalCompetitorStats"></div>
+                <div class="table-responsive" id="modalCompetitorTableWrap">
+                    <table class="table">
+                        <thead id="modalCompetitorTableHead"></thead>
+                        <tbody id="modalCompetitorTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="results-modal-empty hidden" id="modalCompetitorEmpty">No hay evaluaciones cargadas para este competidor.</div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const resultadosExportables = <?= json_encode($resultadosAgrupados, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
         const body = document.body;
@@ -340,6 +349,16 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
         const toggleSidebarButton = document.getElementById('toggleSidebarBtn');
         const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
         const exportButtons = document.querySelectorAll('[data-export-group-index]');
+        const competitorModalButtons = document.querySelectorAll('[data-open-competitor-modal]');
+        const competitorDetailModal = document.getElementById('competitorDetailModal');
+        const closeCompetitorModalButton = document.getElementById('closeCompetitorModal');
+        const modalCompetitorTitle = document.getElementById('modalCompetitorTitle');
+        const modalCompetitorMeta = document.getElementById('modalCompetitorMeta');
+        const modalCompetitorStats = document.getElementById('modalCompetitorStats');
+        const modalCompetitorTableHead = document.getElementById('modalCompetitorTableHead');
+        const modalCompetitorTableBody = document.getElementById('modalCompetitorTableBody');
+        const modalCompetitorTableWrap = document.getElementById('modalCompetitorTableWrap');
+        const modalCompetitorEmpty = document.getElementById('modalCompetitorEmpty');
 
         function syncSidebarState() {
             if (mobileBreakpoint.matches) {
@@ -496,6 +515,137 @@ $metricas = $viewData['metricas'] ?? ['grupos' => 0, 'evaluaciones' => 0, 'compe
                     exportarGrupoAExcel(groupIndex);
                 }
             });
+        });
+
+        function openCompetitorModal() {
+            competitorDetailModal?.classList.remove('hidden');
+            body.style.overflow = 'hidden';
+        }
+
+        function closeCompetitorModal() {
+            competitorDetailModal?.classList.add('hidden');
+            body.style.overflow = '';
+        }
+
+        function renderCompetitorDetail(groupIndex, competitorNumber) {
+            const grupo = resultadosExportables[groupIndex];
+            const competidor = grupo?.competidores_detalle?.find((item) => String(item.competidor_numero) === String(competitorNumber));
+
+            if (!grupo || !competidor) {
+                return;
+            }
+
+            if (modalCompetitorTitle) {
+                modalCompetitorTitle.textContent = `Competidor #${competidor.competidor_numero}`;
+            }
+            if (modalCompetitorMeta) {
+                modalCompetitorMeta.textContent = `${grupo.subcategoria || ''} | ${grupo.categoria || ''} | ${grupo.evento_nombre || ''}`;
+            }
+            if (modalCompetitorStats) {
+                modalCompetitorStats.innerHTML = `
+                    <span class="ranking-badge">Puesto ${competidor.puesto ?? 0}</span>
+                    <span class="ranking-badge">Puntaje final ${Number(competidor.puntaje_final ?? 0).toFixed(2)}</span>
+                    <span class="ranking-badge">Promedio final ${Number(competidor.promedio_final ?? 0).toFixed(2)}</span>
+                    <span class="ranking-badge">Evaluaciones ${competidor.total_evaluaciones ?? 0}</span>
+                `;
+            }
+
+            const criterios = grupo.criterios || [];
+            const evaluaciones = competidor.evaluaciones || [];
+
+            if (!evaluaciones.length) {
+                modalCompetitorTableWrap?.classList.add('hidden');
+                modalCompetitorEmpty?.classList.remove('hidden');
+                return;
+            }
+
+            modalCompetitorTableWrap?.classList.remove('hidden');
+            modalCompetitorEmpty?.classList.add('hidden');
+
+            if (modalCompetitorTableHead) {
+                modalCompetitorTableHead.innerHTML = `
+                    <tr>
+                        <th>ID</th>
+                        <th>Jurado</th>
+                        <th>Nombre cargado</th>
+                        ${criterios.map((criterio) => `<th>${criterio.criterio_nombre || ''}</th>`).join('')}
+                        <th>Total</th>
+                        <th>Promedio</th>
+                        <th>Fecha</th>
+                    </tr>
+                `;
+            }
+
+            if (modalCompetitorTableBody) {
+                const rows = evaluaciones.map((evaluacion) => {
+                    const detallesIndexados = {};
+                    (evaluacion.detalles || []).forEach((detalle) => {
+                        detallesIndexados[detalle.criterio_clave || ''] = detalle;
+                    });
+
+                    const criteriosHtml = criterios.map((criterio) => {
+                        const detalle = detallesIndexados[criterio.criterio_clave || ''];
+                        if (!detalle) {
+                            return '<td>-</td>';
+                        }
+                        return `<td>${Number(detalle.puntaje_otorgado ?? 0).toFixed(2)}/${Number(detalle.puntaje_maximo ?? 0).toFixed(0)}</td>`;
+                    }).join('');
+
+                    return `
+                        <tr>
+                            <td>${evaluacion.id ?? 0}</td>
+                            <td>${evaluacion.jurado_display ?? ''}</td>
+                            <td>${evaluacion.competidor_nombre ?? ''}</td>
+                            ${criteriosHtml}
+                            <td><strong>${Number(evaluacion.puntaje_total ?? 0).toFixed(2)}</strong></td>
+                            <td>${Number(evaluacion.promedio ?? 0).toFixed(2)}</td>
+                            <td>${evaluacion.creado_en ?? ''}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const finalRow = `
+                    <tr class="final-row">
+                        <td colspan="3">Promedio final del competidor</td>
+                        ${criterios.map((criterio) => {
+                            const detalle = competidor.criterios_promedio?.[criterio.criterio_clave || ''];
+                            if (!detalle) {
+                                return '<td>-</td>';
+                            }
+                            return `<td>${Number(detalle.promedio_otorgado ?? 0).toFixed(2)}/${Number(detalle.puntaje_maximo ?? 0).toFixed(0)}</td>`;
+                        }).join('')}
+                        <td><strong>${Number(competidor.puntaje_final ?? 0).toFixed(2)}</strong></td>
+                        <td><strong>${Number(competidor.promedio_final ?? 0).toFixed(2)}</strong></td>
+                        <td>Puesto ${competidor.puesto ?? 0}</td>
+                    </tr>
+                `;
+
+                modalCompetitorTableBody.innerHTML = rows + finalRow;
+            }
+        }
+
+        competitorModalButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const groupIndex = parseInt(button.dataset.groupIndex || '-1', 10);
+                const competitorNumber = button.dataset.competitorNumber || '';
+                if (Number.isNaN(groupIndex) || groupIndex < 0 || competitorNumber === '') {
+                    return;
+                }
+                renderCompetitorDetail(groupIndex, competitorNumber);
+                openCompetitorModal();
+            });
+        });
+
+        closeCompetitorModalButton?.addEventListener('click', closeCompetitorModal);
+        competitorDetailModal?.addEventListener('click', (event) => {
+            if (event.target === competitorDetailModal) {
+                closeCompetitorModal();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && competitorDetailModal && !competitorDetailModal.classList.contains('hidden')) {
+                closeCompetitorModal();
+            }
         });
 
         function lockFrameworkTheme() {
