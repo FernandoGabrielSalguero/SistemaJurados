@@ -124,8 +124,6 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
 
                 <?php if ($formularioSeleccionado): ?>
                     <section>
-                        <h2 class="section-title">Completar evaluacion</h2>
-                        <p class="section-caption">Selecciona el formulario, el competidor y puntua cada criterio dentro del rango permitido.</p>
 
                         <form method="post" class="form-stack">
                             <input type="hidden" name="guardar_evaluacion" value="1">
