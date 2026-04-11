@@ -76,6 +76,15 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .confirm-criteria-list { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
         .confirm-criteria-item { display:flex; align-items:center; justify-content:space-between; gap:16px; font-size:.92rem; }
         .confirm-criteria-item span:last-child { font-weight:800; color:#202633; }
+        .confirm-status { margin-top:6px; border-radius:16px; padding:14px 16px; font-size:.92rem; line-height:1.5; border:1px solid transparent; }
+        .confirm-status.error { background:var(--danger-soft); color:var(--danger); border-color:#fecaca; }
+        .save-toast { position:fixed; top:20px; right:20px; z-index:80; min-width:300px; max-width:min(420px,calc(100vw - 32px)); display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:20px; border:1px solid rgba(134,239,172,.9); background:linear-gradient(135deg,rgba(236,253,243,.98),rgba(220,252,231,.96)); box-shadow:0 24px 60px rgba(21,128,61,.18); color:#166534; opacity:0; transform:translate3d(0,-16px,0) scale(.96); pointer-events:none; }
+        .save-toast.show { animation:saveToastIn .35s ease-out forwards, saveToastOut .45s ease-in 4.2s forwards; }
+        .save-toast-icon { width:42px; height:42px; border-radius:14px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; box-shadow:0 12px 24px rgba(34,197,94,.28); }
+        .save-toast-title { margin:0 0 2px; font-size:.98rem; font-weight:800; color:#14532d; }
+        .save-toast-text { margin:0; font-size:.88rem; color:#166534; }
+        @keyframes saveToastIn { from { opacity:0; transform:translate3d(0,-16px,0) scale(.96); } to { opacity:1; transform:translate3d(0,0,0) scale(1); } }
+        @keyframes saveToastOut { from { opacity:1; transform:translate3d(0,0,0) scale(1); } to { opacity:0; transform:translate3d(0,-12px,0) scale(.98); } }
         .score-summary { display:flex; align-items:center; justify-content:space-between; gap:14px; border-radius:18px; padding:18px; background:#0f172a; color:#fff; }
         .score-summary-label { color:rgba(255,255,255,.72); font-size:.88rem; }
         .score-blocks { display:flex; gap:24px; }
@@ -119,14 +128,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
 
         <main class="content">
             <div class="page-shell">
-                <?php if ($mensaje !== ''): ?>
-                    <section class="panel-card">
-                        <div class="alert-inline <?= htmlspecialchars($mensajeTipo, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8') ?></div>
-                        <?php if ($estadoTablas['faltantes'] ?? []): ?>
-                            <div class="alert-inline warning">Todavia faltan tablas del modulo: <strong><?= htmlspecialchars(implode(', ', $estadoTablas['faltantes']), ENT_QUOTES, 'UTF-8') ?></strong>.</div>
-                        <?php endif; ?>
-                    </section>
-                <?php elseif ($estadoTablas['faltantes'] ?? []): ?>
+                <?php if (($estadoTablas['faltantes'] ?? []) && $mensajeTipo !== 'danger'): ?>
                     <section class="panel-card">
                         <div class="alert-inline warning">Todavia faltan tablas del modulo: <strong><?= htmlspecialchars(implode(', ', $estadoTablas['faltantes']), ENT_QUOTES, 'UTF-8') ?></strong>.</div>
                     </section>
@@ -269,10 +271,23 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         </main>
     </div>
 
+    <?php if ($mensaje !== '' && $mensajeTipo === 'success'): ?>
+        <div id="saveToast" class="save-toast show" role="status" aria-live="polite">
+            <div class="save-toast-icon" aria-hidden="true">
+                <span class="material-icons">check</span>
+            </div>
+            <div>
+                <p class="save-toast-title">Calificacion registrada</p>
+                <p class="save-toast-text"><?= htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8') ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div id="confirmacionModal" class="modal hidden">
         <div class="modal-content">
-            <h3>Confirmar calificacion</h3>
+            <h3 id="confirmModalTitle">Confirmar calificacion</h3>
             <div class="confirm-summary">
+                <div id="confirmModalStatus" class="confirm-status error hidden"></div>
                 <div class="confirm-section">
                     <div class="confirm-title">Resumen de la evaluacion</div>
                     <div class="confirm-grid">
@@ -335,7 +350,13 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         const modalCompetidor = document.getElementById('modalCompetidor');
         const modalResultado = document.getElementById('modalResultado');
         const modalCriterios = document.getElementById('modalCriterios');
+        const confirmModalTitle = document.getElementById('confirmModalTitle');
+        const confirmModalStatus = document.getElementById('confirmModalStatus');
+        const saveToast = document.getElementById('saveToast');
         let envioConfirmado = false;
+        let confirmModalMode = 'confirm';
+        const serverMessage = <?= json_encode((string) $mensaje, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        const serverMessageType = <?= json_encode((string) $mensajeTipo, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
         function formatScore(value, decimals = 1) {
             return Number(value || 0).toFixed(decimals).replace('.', ',');
@@ -347,6 +368,26 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
 
         function closeConfirmModal() {
             confirmacionModal?.classList.add('hidden');
+        }
+
+        function setConfirmModalMode(mode, message = '') {
+            if (!confirmModalTitle || !confirmModalStatus || !confirmarGuardadoBtn) {
+                return;
+            }
+
+            confirmModalMode = mode;
+
+            if (mode === 'error') {
+                confirmModalTitle.textContent = 'No se pudo guardar la calificacion';
+                confirmModalStatus.textContent = message;
+                confirmModalStatus.classList.remove('hidden');
+                confirmarGuardadoBtn.textContent = 'Entendido';
+            } else {
+                confirmModalTitle.textContent = 'Confirmar calificacion';
+                confirmModalStatus.textContent = '';
+                confirmModalStatus.classList.add('hidden');
+                confirmarGuardadoBtn.textContent = 'Confirmar';
+            }
         }
 
         function actualizarResumen() {
@@ -435,13 +476,32 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
 
             actualizarResumen();
             construirResumenModal();
+            setConfirmModalMode('confirm');
             openConfirmModal();
         });
         confirmarGuardadoBtn?.addEventListener('click', () => {
+            if (confirmModalMode === 'error') {
+                closeConfirmModal();
+                return;
+            }
             envioConfirmado = true;
             closeConfirmModal();
             evaluacionForm?.submit();
         });
+
+        if (serverMessageType === 'danger' && serverMessage !== '') {
+            actualizarResumen();
+            construirResumenModal();
+            setConfirmModalMode('error', serverMessage);
+            openConfirmModal();
+        }
+        if (saveToast) {
+            saveToast.addEventListener('animationend', (event) => {
+                if (event.animationName === 'saveToastOut') {
+                    saveToast.remove();
+                }
+            });
+        }
 
         function lockFrameworkTheme() {
             const root = document.documentElement;
