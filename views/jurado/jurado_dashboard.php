@@ -341,11 +341,11 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
             return Number(value || 0).toFixed(decimals).replace('.', ',');
         }
 
-        function openModal() {
+        function openConfirmModal() {
             confirmacionModal?.classList.remove('hidden');
         }
 
-        function closeModal() {
+        function closeConfirmModal() {
             confirmacionModal?.classList.add('hidden');
         }
 
@@ -411,15 +411,15 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
             select.addEventListener('change', actualizarResumen);
         });
         competidorNumeroInput?.addEventListener('change', actualizarResumen);
-        cancelarGuardadoBtn?.addEventListener('click', closeModal);
+        cancelarGuardadoBtn?.addEventListener('click', closeConfirmModal);
         confirmacionModal?.addEventListener('click', (event) => {
             if (event.target === confirmacionModal) {
-                closeModal();
+                closeConfirmModal();
             }
         });
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && confirmacionModal && !confirmacionModal.classList.contains('hidden')) {
-                closeModal();
+                closeConfirmModal();
             }
         });
         evaluacionForm?.addEventListener('submit', (event) => {
@@ -435,11 +435,11 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
 
             actualizarResumen();
             construirResumenModal();
-            openModal();
+            openConfirmModal();
         });
         confirmarGuardadoBtn?.addEventListener('click', () => {
             envioConfirmado = true;
-            closeModal();
+            closeConfirmModal();
             evaluacionForm?.submit();
         });
 
