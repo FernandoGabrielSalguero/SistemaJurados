@@ -66,6 +66,16 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .slider-row { display:flex; align-items:center; gap:12px; }
         .score-slider { flex:1; accent-color:#e4a800; }
         .slider-value { min-width:54px; text-align:right; font-weight:800; color:#202633; }
+        .confirm-summary { display:flex; flex-direction:column; gap:14px; text-align:left; }
+        .confirm-section { padding-bottom:12px; border-bottom:1px solid var(--border); }
+        .confirm-section:last-child { padding-bottom:0; border-bottom:0; }
+        .confirm-title { margin:0 0 8px; font-size:.95rem; font-weight:800; color:#202633; }
+        .confirm-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 14px; }
+        .confirm-item-label { color:var(--muted); font-size:.78rem; margin-bottom:2px; }
+        .confirm-item-value { color:#202633; font-size:.94rem; font-weight:700; }
+        .confirm-criteria-list { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; }
+        .confirm-criteria-item { display:flex; align-items:center; justify-content:space-between; gap:16px; font-size:.92rem; }
+        .confirm-criteria-item span:last-child { font-weight:800; color:#202633; }
         .score-summary { display:flex; align-items:center; justify-content:space-between; gap:14px; border-radius:18px; padding:18px; background:#0f172a; color:#fff; }
         .score-summary-label { color:rgba(255,255,255,.72); font-size:.88rem; }
         .score-blocks { display:flex; gap:24px; }
@@ -87,7 +97,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .empty-state h2 { margin:0 0 10px; font-size:1.2rem; font-weight:800; color:#202633; }
         .empty-state p { margin:0; color:var(--muted); line-height:1.6; }
         @media (max-width:1180px) { .form-layout { grid-template-columns:1fr; } .summary-aside { position:static; } .top-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } }
+        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid,.confirm-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } }
         @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .logout-link span:last-child { display:none; } .score-summary-value { font-size:1.6rem; } .score-blocks { gap:16px; } }
     </style>
 </head>
@@ -125,7 +135,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 <?php if ($formularioSeleccionado): ?>
                     <section>
 
-                        <form method="post" class="form-stack">
+                        <form method="post" class="form-stack" id="evaluacionForm">
                             <input type="hidden" name="guardar_evaluacion" value="1">
                             <div class="form-layout">
                                 <div class="form-main form-shell">
@@ -238,7 +248,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                     </div>
 
                                     <div class="form-actions">
-                                        <button type="submit" class="btn-primary">Guardar calificacion</button>
+                                        <button type="submit" class="btn-primary" id="guardarCalificacionBtn">Guardar calificacion</button>
                                     </div>
                                 </aside>
                             </div>
@@ -259,6 +269,51 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         </main>
     </div>
 
+    <div id="confirmacionModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Confirmar calificacion</h3>
+            <div class="confirm-summary">
+                <div class="confirm-section">
+                    <div class="confirm-title">Resumen de la evaluacion</div>
+                    <div class="confirm-grid">
+                        <div>
+                            <div class="confirm-item-label">Evento</div>
+                            <div class="confirm-item-value" id="modalEvento"></div>
+                        </div>
+                        <div>
+                            <div class="confirm-item-label">Jurado</div>
+                            <div class="confirm-item-value" id="modalJurado"></div>
+                        </div>
+                        <div>
+                            <div class="confirm-item-label">Categoria</div>
+                            <div class="confirm-item-value" id="modalCategoria"></div>
+                        </div>
+                        <div>
+                            <div class="confirm-item-label">Subcategoria</div>
+                            <div class="confirm-item-value" id="modalSubcategoria"></div>
+                        </div>
+                        <div>
+                            <div class="confirm-item-label">N° del competidor</div>
+                            <div class="confirm-item-value" id="modalCompetidor"></div>
+                        </div>
+                        <div>
+                            <div class="confirm-item-label">Resultado</div>
+                            <div class="confirm-item-value" id="modalResultado"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="confirm-section">
+                    <div class="confirm-title">Criterios seleccionados</div>
+                    <ul class="confirm-criteria-list" id="modalCriterios"></ul>
+                </div>
+            </div>
+            <div class="form-buttons">
+                <button class="btn btn-aceptar" type="button" id="confirmarGuardadoBtn">Confirmar</button>
+                <button class="btn btn-cancelar" type="button" id="cancelarGuardadoBtn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const scoreSelects = document.querySelectorAll('.score-slider');
         const puntajeTotal = document.getElementById('puntajeTotal');
@@ -269,9 +324,29 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         const resumenFormulario = document.getElementById('resumenFormulario');
         const resumenCategoria = document.getElementById('resumenCategoria');
         const categoriaSelect = document.getElementById('categoria');
+        const evaluacionForm = document.getElementById('evaluacionForm');
+        const confirmacionModal = document.getElementById('confirmacionModal');
+        const confirmarGuardadoBtn = document.getElementById('confirmarGuardadoBtn');
+        const cancelarGuardadoBtn = document.getElementById('cancelarGuardadoBtn');
+        const modalEvento = document.getElementById('modalEvento');
+        const modalJurado = document.getElementById('modalJurado');
+        const modalCategoria = document.getElementById('modalCategoria');
+        const modalSubcategoria = document.getElementById('modalSubcategoria');
+        const modalCompetidor = document.getElementById('modalCompetidor');
+        const modalResultado = document.getElementById('modalResultado');
+        const modalCriterios = document.getElementById('modalCriterios');
+        let envioConfirmado = false;
 
         function formatScore(value, decimals = 1) {
             return Number(value || 0).toFixed(decimals).replace('.', ',');
+        }
+
+        function openModal() {
+            confirmacionModal?.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            confirmacionModal?.classList.add('hidden');
         }
 
         function actualizarResumen() {
@@ -299,11 +374,74 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
             }
         }
 
+        function construirResumenModal() {
+            if (modalEvento) {
+                modalEvento.textContent = document.getElementById('evento_nombre')?.textContent?.trim() || '-';
+            }
+            if (modalJurado) {
+                modalJurado.textContent = <?= json_encode((string) $usuarioSesion, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+            }
+            if (modalCategoria && categoriaSelect) {
+                modalCategoria.textContent = categoriaSelect.options[categoriaSelect.selectedIndex]?.textContent?.trim() || '-';
+            }
+            if (modalSubcategoria && formularioSelect) {
+                modalSubcategoria.textContent = formularioSelect.options[formularioSelect.selectedIndex]?.textContent?.trim() || '-';
+            }
+            if (modalCompetidor && competidorNumeroInput) {
+                modalCompetidor.textContent = competidorNumeroInput.value.trim() || '-';
+            }
+            if (modalResultado) {
+                modalResultado.textContent = `Total ${puntajeTotal?.textContent || '0,0'} | Promedio ${puntajePromedio?.textContent || '0,00'}`;
+            }
+            if (modalCriterios) {
+                modalCriterios.innerHTML = '';
+                scoreSelects.forEach((select) => {
+                    const card = select.closest('.criteria-card');
+                    const criterio = card?.querySelector('.criteria-title')?.textContent?.trim() || 'Criterio';
+                    const item = document.createElement('li');
+                    item.className = 'confirm-criteria-item';
+                    item.innerHTML = `<span>${criterio}</span><span>${formatScore(select.value, 1)}</span>`;
+                    modalCriterios.appendChild(item);
+                });
+            }
+        }
+
         scoreSelects.forEach((select) => {
             select.addEventListener('input', actualizarResumen);
             select.addEventListener('change', actualizarResumen);
         });
         competidorNumeroInput?.addEventListener('change', actualizarResumen);
+        cancelarGuardadoBtn?.addEventListener('click', closeModal);
+        confirmacionModal?.addEventListener('click', (event) => {
+            if (event.target === confirmacionModal) {
+                closeModal();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && confirmacionModal && !confirmacionModal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+        evaluacionForm?.addEventListener('submit', (event) => {
+            if (envioConfirmado) {
+                return;
+            }
+
+            event.preventDefault();
+            if (!evaluacionForm.checkValidity()) {
+                evaluacionForm.reportValidity();
+                return;
+            }
+
+            actualizarResumen();
+            construirResumenModal();
+            openModal();
+        });
+        confirmarGuardadoBtn?.addEventListener('click', () => {
+            envioConfirmado = true;
+            closeModal();
+            evaluacionForm?.submit();
+        });
 
         function lockFrameworkTheme() {
             const root = document.documentElement;
