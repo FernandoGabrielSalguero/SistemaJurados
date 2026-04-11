@@ -25,22 +25,56 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
     <script src="https://framework.impulsagroup.com/assets/javascript/framework.js" defer></script>
     <style>
         @font-face { font-family:'Montserrat'; src:url('../../assets/institucionales/fonts/Montserrat/Montserrat-VariableFont_wght.ttf') format('truetype'); font-weight:100 900; font-style:normal; font-display:swap; }
-        :root { --surface:#fff; --border:#e8ecf4; --text:#1f2937; --muted:#6a7688; --primary:#e4a800; --success:#15803d; --success-soft:#ecfdf3; --danger:#b91c1c; --danger-soft:#fef2f2; --warning:#c2410c; --warning-soft:#fff7ed; --shadow:0 10px 28px rgba(15,23,42,.08); }
+        :root {
+            --font-family:'Montserrat',sans-serif;
+            --base-font-size:14px;
+            --page-bg-start:#fffdf7;
+            --page-bg-end:#f7f8fc;
+            --surface:#ffffff;
+            --border:#e8ecf4;
+            --text:#1f2937;
+            --muted:#6a7688;
+            --primary:#e4a800;
+            --primary-strong:#f3c23d;
+            --primary-text:#3a2b00;
+            --success:#15803d;
+            --success-soft:#ecfdf3;
+            --danger:#b91c1c;
+            --danger-soft:#fef2f2;
+            --warning:#c2410c;
+            --warning-soft:#fff7ed;
+            --navbar-bg:#ffffff;
+            --navbar-border:#e8ecf4;
+            --card-radius:20px;
+            --control-radius:14px;
+            --panel-padding:24px;
+            --content-max-width:1600px;
+            --shadow-color:15,23,42;
+            --shadow-y:10px;
+            --shadow-blur:28px;
+            --shadow-alpha:.08;
+            --summary-bg:#0f172a;
+            --summary-text:#ffffff;
+            --summary-muted:#cbd5e1;
+            --field-bg:#ffffff;
+            --field-readonly-bg:#f8fafc;
+            --shadow:0 var(--shadow-y) var(--shadow-blur) rgba(var(--shadow-color),var(--shadow-alpha));
+        }
         * { box-sizing:border-box; }
-        html { font-size:14px; }
-        body { margin:0; font-family:'Montserrat',sans-serif; background:linear-gradient(180deg,#fffdf7 0%,#f7f8fc 100%); color:var(--text); }
+        html { font-size:var(--base-font-size); }
+        body { margin:0; font-family:var(--font-family); background:linear-gradient(180deg,var(--page-bg-start) 0%,var(--page-bg-end) 100%); color:var(--text); transition:background .25s ease,color .25s ease,font-size .25s ease; }
         .theme-settings-btn,.theme-drawer,.theme-settings-overlay { display:none !important; visibility:hidden !important; pointer-events:none !important; }
         .page { min-height:100vh; display:flex; flex-direction:column; }
-        .navbar { background:rgba(255,255,255,.9); backdrop-filter:blur(14px); border-bottom:1px solid rgba(232,236,244,.96); display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 20px; position:sticky; top:0; z-index:20; }
-        .navbar-title { font-size:1rem; font-weight:800; color:#1f2937; line-height:1.2; }
+        .navbar { background:var(--navbar-bg); backdrop-filter:blur(14px); border-bottom:1px solid var(--navbar-border); display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 20px; position:sticky; top:0; z-index:20; transition:background .25s ease,border-color .25s ease; }
+        .navbar-title { font-size:1rem; font-weight:800; color:var(--text); line-height:1.2; }
         .navbar-subtitle { color:var(--muted); font-size:.85rem; line-height:1.25; }
-        .navbar-user { font-size:1.22rem; font-weight:800; color:#172033; line-height:1.1; text-align:right; }
+        .navbar-user { font-size:1.22rem; font-weight:800; color:var(--text); line-height:1.1; text-align:right; }
         .navbar-actions { display:flex; align-items:center; gap:12px; }
-        .logout-link { display:inline-flex; align-items:center; gap:7px; border-radius:999px; background:#fff; color:var(--danger); border:1px solid #fecaca; padding:9px 14px; text-decoration:none; font-weight:700; font-size:.92rem; }
-        .content { width:100%; max-width:none; margin:0; padding:24px 20px 32px; }
+        .logout-link { display:inline-flex; align-items:center; gap:7px; border-radius:999px; background:var(--surface); color:var(--danger); border:1px solid #fecaca; padding:9px 14px; text-decoration:none; font-weight:700; font-size:.92rem; }
+        .content { width:100%; max-width:var(--content-max-width); margin:0 auto; padding:24px 20px 32px; transition:max-width .25s ease,padding .25s ease; }
         .page-shell { display:flex; flex-direction:column; gap:20px; }
-        .panel-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow); padding:24px; width:100%; }
-        .hero-card h1,.section-title { margin:0 0 6px; font-size:1.25rem; font-weight:800; color:#202633; line-height:1.2; }
+        .panel-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--card-radius); box-shadow:var(--shadow); padding:var(--panel-padding); width:100%; transition:background .25s ease,border-color .25s ease,border-radius .25s ease,box-shadow .25s ease,padding .25s ease; }
+        .hero-card h1,.section-title { margin:0 0 6px; font-size:1.25rem; font-weight:800; color:var(--text); line-height:1.2; }
         .hero-card p,.section-caption,.field-help { margin:0; color:var(--muted); line-height:1.5; font-size:.92rem; }
         .alert-inline { margin-top:14px; padding:14px 16px; border-radius:16px; font-size:.92rem; line-height:1.5; border:1px solid #dbeafe; background:#eff6ff; color:#1d4ed8; }
         .alert-inline.success { background:var(--success-soft); color:var(--success); border-color:#bbf7d0; }
@@ -54,18 +88,18 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .criteria-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
         .form-field { display:flex; flex-direction:column; gap:7px; }
         .form-field.full { grid-column:1 / -1; }
-        .form-field label { font-size:.84rem; font-weight:700; color:#334155; }
-        .form-field input[type="text"], .form-field select { width:100%; min-height:46px; border-radius:14px; border:1px solid #d6dfef; padding:10px 14px; background:#fff; color:#111827; font-size:.95rem; }
+        .form-field label { font-size:.84rem; font-weight:700; color:var(--text); }
+        .form-field input[type="text"], .form-field select { width:100%; min-height:46px; border-radius:var(--control-radius); border:1px solid #d6dfef; padding:10px 14px; background:var(--field-bg); color:var(--text); font-size:.95rem; transition:background .25s ease,color .25s ease,border-radius .25s ease; }
         .form-shell { display:flex; flex-direction:column; gap:18px; }
-        .readonly-field { display:flex; align-items:center; min-height:46px; border-radius:14px; border:1px solid #d6dfef; padding:10px 14px; background:#f8fafc; color:#111827; font-size:.95rem; font-weight:700; }
-        .summary-card,.criteria-card { border:1px solid var(--border); border-radius:18px; padding:16px; background:linear-gradient(180deg,#fff 0%,#fffef8 100%); }
+        .readonly-field { display:flex; align-items:center; min-height:46px; border-radius:var(--control-radius); border:1px solid #d6dfef; padding:10px 14px; background:var(--field-readonly-bg); color:var(--text); font-size:.95rem; font-weight:700; transition:background .25s ease,color .25s ease,border-radius .25s ease; }
+        .summary-card,.criteria-card { border:1px solid var(--border); border-radius:18px; padding:16px; background:linear-gradient(180deg,var(--surface) 0%,color-mix(in srgb, var(--surface) 88%, #fff4c7 12%) 100%); transition:background .25s ease,border-color .25s ease; }
         .summary-label,.criteria-meta { color:var(--muted); font-size:.82rem; margin-bottom:6px; }
         .summary-value { font-size:1.15rem; font-weight:800; line-height:1.2; }
-        .criteria-title { font-weight:800; margin:0 0 4px; color:#202633; }
+        .criteria-title { font-weight:800; margin:0 0 4px; color:var(--text); }
         .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
         .slider-row { display:flex; align-items:center; gap:12px; }
-        .score-slider { flex:1; accent-color:#e4a800; }
-        .slider-value { min-width:54px; text-align:right; font-weight:800; color:#202633; }
+        .score-slider { flex:1; accent-color:var(--primary); }
+        .slider-value { min-width:54px; text-align:right; font-weight:800; color:var(--text); }
         .confirm-summary { display:flex; flex-direction:column; gap:14px; text-align:left; }
         .confirm-section { padding-bottom:12px; border-bottom:1px solid var(--border); }
         .confirm-section:last-child { padding-bottom:0; border-bottom:0; }
@@ -85,8 +119,8 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .save-toast-text { margin:0; font-size:.88rem; color:#166534; }
         @keyframes saveToastIn { from { opacity:0; transform:translate3d(0,-16px,0) scale(.96); } to { opacity:1; transform:translate3d(0,0,0) scale(1); } }
         @keyframes saveToastOut { from { opacity:1; transform:translate3d(0,0,0) scale(1); } to { opacity:0; transform:translate3d(0,-12px,0) scale(.98); } }
-        .score-summary { display:flex; align-items:center; justify-content:space-between; gap:14px; border-radius:18px; padding:18px; background:#0f172a; color:#fff; }
-        .score-summary-label { color:rgba(255,255,255,.72); font-size:.88rem; }
+        .score-summary { display:flex; align-items:center; justify-content:space-between; gap:14px; border-radius:18px; padding:18px; background:var(--summary-bg); color:var(--summary-text); transition:background .25s ease,color .25s ease; }
+        .score-summary-label { color:var(--summary-muted); font-size:.88rem; }
         .score-blocks { display:flex; gap:24px; }
         .score-summary-value { font-size:2rem; font-weight:800; line-height:1; }
         .summary-aside { position:sticky; top:92px; }
@@ -94,20 +128,46 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .resume-item { padding-bottom:12px; border-bottom:1px solid var(--border); }
         .resume-item:last-child { padding-bottom:0; border-bottom:0; }
         .resume-item-label { color:var(--muted); font-size:.8rem; margin-bottom:4px; }
-        .resume-item-value { color:#202633; font-size:.98rem; font-weight:800; word-break:break-word; }
+        .resume-item-value { color:var(--text); font-size:.98rem; font-weight:800; word-break:break-word; }
         .summary-aside .score-summary { margin-top:18px; flex-direction:column; align-items:flex-start; }
         .summary-aside .score-blocks { width:100%; justify-content:space-between; }
         .form-actions { display:flex; justify-content:stretch; margin-top:18px; }
-        .btn-primary { border:0; border-radius:14px; background:linear-gradient(135deg,#e4a800,#f3c23d); color:#3a2b00; padding:12px 18px; font-weight:800; cursor:pointer; }
-        .empty-state { min-height:260px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed #e8ecf4; border-radius:18px; background:linear-gradient(180deg,#fffef8 0%,#fffdf4 100%); padding:32px 20px; }
+        .btn-primary { border:0; border-radius:var(--control-radius); background:linear-gradient(135deg,var(--primary),var(--primary-strong)); color:var(--primary-text); padding:12px 18px; font-weight:800; cursor:pointer; transition:border-radius .25s ease,background .25s ease,color .25s ease; }
+        .empty-state { min-height:260px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed var(--border); border-radius:18px; background:linear-gradient(180deg,color-mix(in srgb, var(--surface) 88%, #fff7d6 12%) 0%,color-mix(in srgb, var(--surface) 92%, #fffbef 8%) 100%); padding:32px 20px; }
         .empty-state-box { max-width:480px; }
-        .empty-state-icon { width:72px; height:72px; margin:0 auto 18px; border-radius:20px; display:inline-flex; align-items:center; justify-content:center; background:#fff6d9; color:#b77900; }
+        .empty-state-icon { width:72px; height:72px; margin:0 auto 18px; border-radius:20px; display:inline-flex; align-items:center; justify-content:center; background:color-mix(in srgb, var(--primary) 18%, #ffffff 82%); color:#b77900; }
         .empty-state-icon .material-icons { font-size:34px; }
-        .empty-state h2 { margin:0 0 10px; font-size:1.2rem; font-weight:800; color:#202633; }
+        .empty-state h2 { margin:0 0 10px; font-size:1.2rem; font-weight:800; color:var(--text); }
         .empty-state p { margin:0; color:var(--muted); line-height:1.6; }
+        .dashboard-style-btn { position:fixed; right:22px; bottom:22px; z-index:65; width:58px; height:58px; border:0; border-radius:18px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--primary),var(--primary-strong)); color:var(--primary-text); box-shadow:0 18px 40px rgba(var(--shadow-color),.22); cursor:pointer; transition:transform .2s ease, box-shadow .2s ease; }
+        .dashboard-style-btn:hover { transform:translateY(-2px) rotate(8deg); box-shadow:0 22px 46px rgba(var(--shadow-color),.28); }
+        .dashboard-style-btn .material-icons { font-size:28px; }
+        .dashboard-style-overlay { position:fixed; inset:0; background:rgba(15,23,42,.42); backdrop-filter:blur(4px); z-index:69; opacity:0; pointer-events:none; transition:opacity .25s ease; }
+        .dashboard-style-overlay.open { opacity:1; pointer-events:auto; }
+        .dashboard-style-drawer { position:fixed; top:0; right:0; width:min(430px,100vw); height:100vh; z-index:70; background:var(--surface); border-left:1px solid var(--border); box-shadow:-20px 0 48px rgba(var(--shadow-color),.18); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .3s ease,background .25s ease,border-color .25s ease; }
+        .dashboard-style-drawer.open { transform:translateX(0); }
+        .style-drawer-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 22px 18px; border-bottom:1px solid var(--border); }
+        .style-drawer-title { margin:0; font-size:1.2rem; font-weight:800; color:var(--text); }
+        .style-drawer-caption { margin:6px 0 0; color:var(--muted); font-size:.9rem; line-height:1.5; }
+        .style-drawer-close { width:42px; height:42px; border:1px solid var(--border); border-radius:14px; background:var(--surface); color:var(--text); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+        .style-drawer-body { flex:1; overflow:auto; padding:18px 22px 24px; display:flex; flex-direction:column; gap:18px; }
+        .style-group { border:1px solid var(--border); border-radius:20px; padding:16px; background:linear-gradient(180deg,var(--surface) 0%,color-mix(in srgb, var(--surface) 90%, #eef2ff 10%) 100%); }
+        .style-group h4 { margin:0 0 12px; font-size:.96rem; font-weight:800; color:var(--text); }
+        .style-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .style-field { display:flex; flex-direction:column; gap:6px; }
+        .style-field.full { grid-column:1 / -1; }
+        .style-field label { font-size:.8rem; font-weight:700; color:var(--muted); }
+        .style-field input[type="color"] { width:100%; height:42px; border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:4px; cursor:pointer; }
+        .style-field input[type="range"], .style-field select { width:100%; }
+        .style-range-value { font-size:.82rem; font-weight:800; color:var(--text); }
+        .style-actions { display:flex; gap:10px; padding-top:4px; }
+        .style-btn-secondary { border:1px solid var(--border); border-radius:14px; background:var(--surface); color:var(--text); padding:11px 14px; font-weight:700; cursor:pointer; flex:1; }
+        .style-presets { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+        .style-preset-btn { border:1px solid var(--border); border-radius:16px; padding:10px; background:var(--surface); cursor:pointer; color:var(--text); text-align:left; }
+        .style-preset-swatch { height:10px; border-radius:999px; margin-bottom:8px; }
         @media (max-width:1180px) { .form-layout { grid-template-columns:1fr; } .summary-aside { position:static; } .top-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid,.confirm-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } }
-        @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .logout-link span:last-child { display:none; } .score-summary-value { font-size:1.6rem; } .score-blocks { gap:16px; } }
+        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid,.confirm-grid,.style-grid,.style-presets { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } .dashboard-style-drawer { width:min(100vw,430px); } }
+        @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .logout-link span:last-child { display:none; } .score-summary-value { font-size:1.6rem; } .score-blocks { gap:16px; } .dashboard-style-btn { right:14px; bottom:14px; width:54px; height:54px; border-radius:16px; } .style-drawer-header,.style-drawer-body { padding-left:16px; padding-right:16px; } }
     </style>
 </head>
 <body>
@@ -271,6 +331,191 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         </main>
     </div>
 
+    <button type="button" class="dashboard-style-btn" id="dashboardStyleBtn" aria-label="Personalizar dashboard">
+        <span class="material-icons">settings</span>
+    </button>
+
+    <div class="dashboard-style-overlay" id="dashboardStyleOverlay"></div>
+
+    <aside class="dashboard-style-drawer" id="dashboardStyleDrawer" aria-hidden="true">
+        <div class="style-drawer-header">
+            <div>
+                <h3 class="style-drawer-title">Personalizar dashboard</h3>
+                <p class="style-drawer-caption">Ajustá colores, tipografía, layout y densidad visual en tiempo real.</p>
+            </div>
+            <button type="button" class="style-drawer-close" id="dashboardStyleClose" aria-label="Cerrar panel">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="style-drawer-body">
+            <section class="style-group">
+                <h4>Presets</h4>
+                <div class="style-presets">
+                    <button type="button" class="style-preset-btn" data-preset="default">
+                        <div class="style-preset-swatch" style="background:linear-gradient(90deg,#fffdf7,#e4a800,#1f2937)"></div>
+                        Clasico
+                    </button>
+                    <button type="button" class="style-preset-btn" data-preset="midnight">
+                        <div class="style-preset-swatch" style="background:linear-gradient(90deg,#0f172a,#38bdf8,#e2e8f0)"></div>
+                        Midnight
+                    </button>
+                    <button type="button" class="style-preset-btn" data-preset="forest">
+                        <div class="style-preset-swatch" style="background:linear-gradient(90deg,#f3fff6,#22c55e,#14532d)"></div>
+                        Forest
+                    </button>
+                </div>
+            </section>
+
+            <section class="style-group">
+                <h4>Colores base</h4>
+                <div class="style-grid">
+                    <div class="style-field">
+                        <label for="stylePageBgStart">Fondo inicio</label>
+                        <input type="color" id="stylePageBgStart" data-theme-control="pageBgStart">
+                    </div>
+                    <div class="style-field">
+                        <label for="stylePageBgEnd">Fondo fin</label>
+                        <input type="color" id="stylePageBgEnd" data-theme-control="pageBgEnd">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleSurface">Tarjetas</label>
+                        <input type="color" id="styleSurface" data-theme-control="surface">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleBorder">Bordes</label>
+                        <input type="color" id="styleBorder" data-theme-control="border">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleText">Texto principal</label>
+                        <input type="color" id="styleText" data-theme-control="text">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleMuted">Texto secundario</label>
+                        <input type="color" id="styleMuted" data-theme-control="muted">
+                    </div>
+                </div>
+            </section>
+
+            <section class="style-group">
+                <h4>Acciones y acentos</h4>
+                <div class="style-grid">
+                    <div class="style-field">
+                        <label for="stylePrimary">Primario inicio</label>
+                        <input type="color" id="stylePrimary" data-theme-control="primary">
+                    </div>
+                    <div class="style-field">
+                        <label for="stylePrimaryStrong">Primario fin</label>
+                        <input type="color" id="stylePrimaryStrong" data-theme-control="primaryStrong">
+                    </div>
+                    <div class="style-field">
+                        <label for="stylePrimaryText">Texto botones</label>
+                        <input type="color" id="stylePrimaryText" data-theme-control="primaryText">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleSummaryBg">Resumen fondo</label>
+                        <input type="color" id="styleSummaryBg" data-theme-control="summaryBg">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleSummaryText">Resumen texto</label>
+                        <input type="color" id="styleSummaryText" data-theme-control="summaryText">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleSummaryMuted">Resumen secundario</label>
+                        <input type="color" id="styleSummaryMuted" data-theme-control="summaryMuted">
+                    </div>
+                </div>
+            </section>
+
+            <section class="style-group">
+                <h4>Header y campos</h4>
+                <div class="style-grid">
+                    <div class="style-field">
+                        <label for="styleNavbarBg">Header fondo</label>
+                        <input type="color" id="styleNavbarBg" data-theme-control="navbarBg">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleNavbarBorder">Header borde</label>
+                        <input type="color" id="styleNavbarBorder" data-theme-control="navbarBorder">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleFieldBg">Campos editables</label>
+                        <input type="color" id="styleFieldBg" data-theme-control="fieldBg">
+                    </div>
+                    <div class="style-field">
+                        <label for="styleReadonlyBg">Campos lectura</label>
+                        <input type="color" id="styleReadonlyBg" data-theme-control="fieldReadonlyBg">
+                    </div>
+                </div>
+            </section>
+
+            <section class="style-group">
+                <h4>Tipografia y layout</h4>
+                <div class="style-grid">
+                    <div class="style-field">
+                        <label for="styleFontFamily">Tipografia</label>
+                        <select id="styleFontFamily" data-theme-control="fontFamily">
+                            <option value="'Montserrat',sans-serif">Montserrat</option>
+                            <option value="system-ui,sans-serif">System UI</option>
+                            <option value="Georgia,serif">Serif</option>
+                            <option value="'Trebuchet MS',sans-serif">Trebuchet</option>
+                        </select>
+                    </div>
+                    <div class="style-field">
+                        <label for="styleContentWidth">Ancho del layout</label>
+                        <input type="range" id="styleContentWidth" data-theme-control="contentMaxWidth" min="960" max="1800" step="20">
+                        <span class="style-range-value" data-theme-display="contentMaxWidth"></span>
+                    </div>
+                    <div class="style-field">
+                        <label for="styleBaseFontSize">Tamaño base</label>
+                        <input type="range" id="styleBaseFontSize" data-theme-control="baseFontSize" min="12" max="18" step="1">
+                        <span class="style-range-value" data-theme-display="baseFontSize"></span>
+                    </div>
+                    <div class="style-field">
+                        <label for="stylePanelPadding">Espaciado tarjetas</label>
+                        <input type="range" id="stylePanelPadding" data-theme-control="panelPadding" min="16" max="36" step="1">
+                        <span class="style-range-value" data-theme-display="panelPadding"></span>
+                    </div>
+                    <div class="style-field">
+                        <label for="styleCardRadius">Radio tarjetas</label>
+                        <input type="range" id="styleCardRadius" data-theme-control="cardRadius" min="10" max="32" step="1">
+                        <span class="style-range-value" data-theme-display="cardRadius"></span>
+                    </div>
+                    <div class="style-field">
+                        <label for="styleControlRadius">Radio controles</label>
+                        <input type="range" id="styleControlRadius" data-theme-control="controlRadius" min="8" max="24" step="1">
+                        <span class="style-range-value" data-theme-display="controlRadius"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="style-group">
+                <h4>Sombras y profundidad</h4>
+                <div class="style-grid">
+                    <div class="style-field">
+                        <label for="styleShadowBlur">Difusion sombra</label>
+                        <input type="range" id="styleShadowBlur" data-theme-control="shadowBlur" min="10" max="60" step="1">
+                        <span class="style-range-value" data-theme-display="shadowBlur"></span>
+                    </div>
+                    <div class="style-field">
+                        <label for="styleShadowY">Altura sombra</label>
+                        <input type="range" id="styleShadowY" data-theme-control="shadowY" min="0" max="28" step="1">
+                        <span class="style-range-value" data-theme-display="shadowY"></span>
+                    </div>
+                    <div class="style-field">
+                        <label for="styleShadowAlpha">Opacidad sombra</label>
+                        <input type="range" id="styleShadowAlpha" data-theme-control="shadowAlpha" min="0.02" max="0.35" step="0.01">
+                        <span class="style-range-value" data-theme-display="shadowAlpha"></span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="style-actions">
+                <button type="button" class="style-btn-secondary" id="styleResetBtn">Restablecer</button>
+                <button type="button" class="style-btn-secondary" id="styleCloseBtn">Cerrar</button>
+            </div>
+        </div>
+    </aside>
+
     <?php if ($mensaje !== '' && $mensajeTipo === 'success'): ?>
         <div id="saveToast" class="save-toast show" role="status" aria-live="polite">
             <div class="save-toast-icon" aria-hidden="true">
@@ -353,13 +598,198 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         const confirmModalTitle = document.getElementById('confirmModalTitle');
         const confirmModalStatus = document.getElementById('confirmModalStatus');
         const saveToast = document.getElementById('saveToast');
+        const dashboardStyleBtn = document.getElementById('dashboardStyleBtn');
+        const dashboardStyleDrawer = document.getElementById('dashboardStyleDrawer');
+        const dashboardStyleOverlay = document.getElementById('dashboardStyleOverlay');
+        const dashboardStyleClose = document.getElementById('dashboardStyleClose');
+        const styleResetBtn = document.getElementById('styleResetBtn');
+        const styleCloseBtn = document.getElementById('styleCloseBtn');
+        const themeControls = document.querySelectorAll('[data-theme-control]');
+        const themeDisplays = document.querySelectorAll('[data-theme-display]');
+        const themePresetButtons = document.querySelectorAll('[data-preset]');
         let envioConfirmado = false;
         let confirmModalMode = 'confirm';
         const serverMessage = <?= json_encode((string) $mensaje, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         const serverMessageType = <?= json_encode((string) $mensajeTipo, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        const themeStorageKey = 'jurado_dashboard_custom_theme_v1';
+        const dashboardThemeDefaults = {
+            fontFamily: "'Montserrat',sans-serif",
+            baseFontSize: 14,
+            pageBgStart: '#fffdf7',
+            pageBgEnd: '#f7f8fc',
+            surface: '#ffffff',
+            border: '#e8ecf4',
+            text: '#1f2937',
+            muted: '#6a7688',
+            primary: '#e4a800',
+            primaryStrong: '#f3c23d',
+            primaryText: '#3a2b00',
+            navbarBg: '#ffffff',
+            navbarBorder: '#e8ecf4',
+            cardRadius: 20,
+            controlRadius: 14,
+            panelPadding: 24,
+            contentMaxWidth: 1600,
+            shadowY: 10,
+            shadowBlur: 28,
+            shadowAlpha: 0.08,
+            summaryBg: '#0f172a',
+            summaryText: '#ffffff',
+            summaryMuted: '#cbd5e1',
+            fieldBg: '#ffffff',
+            fieldReadonlyBg: '#f8fafc'
+        };
+        const dashboardThemePresets = {
+            default: { ...dashboardThemeDefaults },
+            midnight: {
+                ...dashboardThemeDefaults,
+                pageBgStart: '#0b1120',
+                pageBgEnd: '#172554',
+                surface: '#0f172a',
+                border: '#334155',
+                text: '#e2e8f0',
+                muted: '#94a3b8',
+                primary: '#38bdf8',
+                primaryStrong: '#0ea5e9',
+                primaryText: '#082f49',
+                navbarBg: '#0f172a',
+                navbarBorder: '#334155',
+                summaryBg: '#020617',
+                summaryText: '#e2e8f0',
+                summaryMuted: '#94a3b8',
+                fieldBg: '#111827',
+                fieldReadonlyBg: '#1e293b',
+                shadowY: 16,
+                shadowBlur: 40,
+                shadowAlpha: 0.24
+            },
+            forest: {
+                ...dashboardThemeDefaults,
+                pageBgStart: '#f3fff6',
+                pageBgEnd: '#dcfce7',
+                surface: '#ffffff',
+                border: '#bbf7d0',
+                text: '#14532d',
+                muted: '#3f7a54',
+                primary: '#22c55e',
+                primaryStrong: '#16a34a',
+                primaryText: '#f0fdf4',
+                navbarBg: '#f0fdf4',
+                navbarBorder: '#bbf7d0',
+                summaryBg: '#14532d',
+                summaryText: '#f0fdf4',
+                summaryMuted: '#bbf7d0',
+                fieldBg: '#ffffff',
+                fieldReadonlyBg: '#f0fdf4',
+                shadowY: 12,
+                shadowBlur: 34,
+                shadowAlpha: 0.16
+            }
+        };
+        let dashboardThemeState = { ...dashboardThemeDefaults };
 
         function formatScore(value, decimals = 1) {
             return Number(value || 0).toFixed(decimals).replace('.', ',');
+        }
+
+        function getThemeDisplayValue(key, value) {
+            if (['baseFontSize', 'panelPadding', 'cardRadius', 'controlRadius', 'shadowBlur', 'shadowY'].includes(key)) {
+                return `${value}px`;
+            }
+            if (key === 'contentMaxWidth') {
+                return `${value}px`;
+            }
+            if (key === 'shadowAlpha') {
+                return Number(value).toFixed(2);
+            }
+            return String(value);
+        }
+
+        function applyDashboardTheme(theme, persist = true) {
+            dashboardThemeState = { ...dashboardThemeDefaults, ...theme };
+            const root = document.documentElement;
+            root.style.setProperty('--font-family', dashboardThemeState.fontFamily);
+            root.style.setProperty('--base-font-size', `${dashboardThemeState.baseFontSize}px`);
+            root.style.setProperty('--page-bg-start', dashboardThemeState.pageBgStart);
+            root.style.setProperty('--page-bg-end', dashboardThemeState.pageBgEnd);
+            root.style.setProperty('--surface', dashboardThemeState.surface);
+            root.style.setProperty('--border', dashboardThemeState.border);
+            root.style.setProperty('--text', dashboardThemeState.text);
+            root.style.setProperty('--muted', dashboardThemeState.muted);
+            root.style.setProperty('--primary', dashboardThemeState.primary);
+            root.style.setProperty('--primary-strong', dashboardThemeState.primaryStrong);
+            root.style.setProperty('--primary-text', dashboardThemeState.primaryText);
+            root.style.setProperty('--navbar-bg', dashboardThemeState.navbarBg);
+            root.style.setProperty('--navbar-border', dashboardThemeState.navbarBorder);
+            root.style.setProperty('--card-radius', `${dashboardThemeState.cardRadius}px`);
+            root.style.setProperty('--control-radius', `${dashboardThemeState.controlRadius}px`);
+            root.style.setProperty('--panel-padding', `${dashboardThemeState.panelPadding}px`);
+            root.style.setProperty('--content-max-width', `${dashboardThemeState.contentMaxWidth}px`);
+            root.style.setProperty('--shadow-y', `${dashboardThemeState.shadowY}px`);
+            root.style.setProperty('--shadow-blur', `${dashboardThemeState.shadowBlur}px`);
+            root.style.setProperty('--shadow-alpha', String(dashboardThemeState.shadowAlpha));
+            root.style.setProperty('--summary-bg', dashboardThemeState.summaryBg);
+            root.style.setProperty('--summary-text', dashboardThemeState.summaryText);
+            root.style.setProperty('--summary-muted', dashboardThemeState.summaryMuted);
+            root.style.setProperty('--field-bg', dashboardThemeState.fieldBg);
+            root.style.setProperty('--field-readonly-bg', dashboardThemeState.fieldReadonlyBg);
+
+            themeControls.forEach((control) => {
+                const key = control.dataset.themeControl;
+                if (!key || !(key in dashboardThemeState)) {
+                    return;
+                }
+                control.value = String(dashboardThemeState[key]);
+            });
+
+            themeDisplays.forEach((display) => {
+                const key = display.dataset.themeDisplay;
+                if (!key || !(key in dashboardThemeState)) {
+                    return;
+                }
+                display.textContent = getThemeDisplayValue(key, dashboardThemeState[key]);
+            });
+
+            if (persist) {
+                localStorage.setItem(themeStorageKey, JSON.stringify(dashboardThemeState));
+            }
+        }
+
+        function loadStoredDashboardTheme() {
+            try {
+                const raw = localStorage.getItem(themeStorageKey);
+                if (!raw) {
+                    return { ...dashboardThemeDefaults };
+                }
+
+                return { ...dashboardThemeDefaults, ...JSON.parse(raw) };
+            } catch (error) {
+                return { ...dashboardThemeDefaults };
+            }
+        }
+
+        function normalizeThemeValue(key, value) {
+            if (['baseFontSize', 'panelPadding', 'cardRadius', 'controlRadius', 'contentMaxWidth', 'shadowY', 'shadowBlur'].includes(key)) {
+                return parseInt(String(value), 10);
+            }
+            if (key === 'shadowAlpha') {
+                return parseFloat(String(value));
+            }
+            return value;
+        }
+
+        function openDashboardStyleDrawer() {
+            dashboardStyleDrawer?.classList.add('open');
+            dashboardStyleOverlay?.classList.add('open');
+            dashboardStyleDrawer?.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDashboardStyleDrawer() {
+            dashboardStyleDrawer?.classList.remove('open');
+            dashboardStyleOverlay?.classList.remove('open');
+            dashboardStyleDrawer?.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
         }
 
         function openConfirmModal() {
@@ -502,6 +932,38 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 }
             });
         }
+        dashboardStyleBtn?.addEventListener('click', openDashboardStyleDrawer);
+        dashboardStyleOverlay?.addEventListener('click', closeDashboardStyleDrawer);
+        dashboardStyleClose?.addEventListener('click', closeDashboardStyleDrawer);
+        styleCloseBtn?.addEventListener('click', closeDashboardStyleDrawer);
+        styleResetBtn?.addEventListener('click', () => applyDashboardTheme(dashboardThemeDefaults));
+        themePresetButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const preset = button.dataset.preset;
+                if (!preset || !dashboardThemePresets[preset]) {
+                    return;
+                }
+                applyDashboardTheme(dashboardThemePresets[preset]);
+            });
+        });
+        themeControls.forEach((control) => {
+            const eventName = control.tagName === 'SELECT' ? 'change' : 'input';
+            control.addEventListener(eventName, () => {
+                const key = control.dataset.themeControl;
+                if (!key) {
+                    return;
+                }
+                applyDashboardTheme({
+                    ...dashboardThemeState,
+                    [key]: normalizeThemeValue(key, control.value)
+                });
+            });
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && dashboardStyleDrawer?.classList.contains('open')) {
+                closeDashboardStyleDrawer();
+            }
+        });
 
         function lockFrameworkTheme() {
             const root = document.documentElement;
@@ -517,6 +979,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         }
 
         actualizarResumen();
+        applyDashboardTheme(loadStoredDashboardTheme(), false);
         lockFrameworkTheme();
         window.addEventListener('load', lockFrameworkTheme);
     </script>
