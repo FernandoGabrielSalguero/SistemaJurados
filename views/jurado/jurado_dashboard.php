@@ -119,18 +119,24 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .save-toast-text { margin:0; font-size:.88rem; color:#166534; }
         @keyframes saveToastIn { from { opacity:0; transform:translate3d(0,-16px,0) scale(.96); } to { opacity:1; transform:translate3d(0,0,0) scale(1); } }
         @keyframes saveToastOut { from { opacity:1; transform:translate3d(0,0,0) scale(1); } to { opacity:0; transform:translate3d(0,-12px,0) scale(.98); } }
-        .score-summary { display:flex; align-items:center; justify-content:space-between; gap:14px; border-radius:18px; padding:18px; background:var(--summary-bg); color:var(--summary-text); transition:background .25s ease,color .25s ease; }
+        .score-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; border-radius:18px; padding:18px; background:var(--summary-bg); color:var(--summary-text); transition:background .25s ease,color .25s ease; }
         .score-summary-label { color:var(--summary-muted); font-size:.88rem; }
         .score-blocks { display:flex; gap:24px; }
+        .score-summary-column { display:flex; flex-direction:column; gap:10px; min-width:0; }
         .score-summary-value { font-size:2rem; font-weight:800; line-height:1; }
+        .tentative-rank { display:inline-flex; align-items:center; justify-content:center; min-height:54px; padding:12px 16px; border-radius:16px; font-size:1.2rem; font-weight:800; line-height:1.2; }
+        .tentative-rank.rank-empty { background:rgba(148,163,184,.16); color:var(--summary-text); }
+        .tentative-rank.rank-third { background:#ffedd5; color:#c2410c; }
+        .tentative-rank.rank-second { background:#fef3c7; color:#b45309; }
+        .tentative-rank.rank-first { background:#dcfce7; color:#15803d; }
         .summary-aside { position:sticky; top:92px; }
         .resume-list { display:flex; flex-direction:column; gap:14px; }
         .resume-item { padding-bottom:12px; border-bottom:1px solid var(--border); }
         .resume-item:last-child { padding-bottom:0; border-bottom:0; }
         .resume-item-label { color:var(--muted); font-size:.8rem; margin-bottom:4px; }
         .resume-item-value { color:var(--text); font-size:.98rem; font-weight:800; word-break:break-word; }
-        .summary-aside .score-summary { margin-top:18px; flex-direction:column; align-items:flex-start; }
-        .summary-aside .score-blocks { width:100%; justify-content:space-between; }
+        .summary-aside .score-summary { margin-top:18px; }
+        .summary-aside .score-blocks { width:100%; justify-content:flex-start; }
         .form-actions { display:flex; justify-content:stretch; margin-top:18px; }
         .btn-primary { border:0; border-radius:var(--control-radius); background:linear-gradient(135deg,var(--primary),var(--primary-strong)); color:var(--primary-text); padding:12px 18px; font-weight:800; cursor:pointer; transition:border-radius .25s ease,background .25s ease,color .25s ease; }
         .empty-state { min-height:260px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed var(--border); border-radius:18px; background:linear-gradient(180deg,color-mix(in srgb, var(--surface) 88%, #fff7d6 12%) 0%,color-mix(in srgb, var(--surface) 92%, #fffbef 8%) 100%); padding:32px 20px; }
@@ -166,7 +172,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .style-preset-btn { border:1px solid var(--border); border-radius:16px; padding:10px; background:var(--surface); cursor:pointer; color:var(--text); text-align:left; }
         .style-preset-swatch { height:10px; border-radius:999px; margin-bottom:8px; }
         @media (max-width:1180px) { .form-layout { grid-template-columns:1fr; } .summary-aside { position:static; } .top-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid,.confirm-grid,.style-grid,.style-presets { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } .dashboard-style-drawer { width:min(100vw,430px); } }
+        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid,.confirm-grid,.style-grid,.style-presets,.score-summary { grid-template-columns:1fr; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } .dashboard-style-drawer { width:min(100vw,430px); } }
         @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .logout-link span:last-child { display:none; } .score-summary-value { font-size:1.6rem; } .score-blocks { gap:16px; } .dashboard-style-btn { right:14px; bottom:14px; width:54px; height:54px; border-radius:16px; } .style-drawer-header,.style-drawer-body { padding-left:16px; padding-right:16px; } }
     </style>
 </head>
@@ -219,7 +225,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                                 </select>
                                             </div>
                                             <div class="form-field">
-                                                <label for="formulario_id">Subcategoria</label>
+                                                <label for="formulario_id">Estilo</label>
                                                 <select id="formulario_id" name="formulario_id" onchange="window.location.href='?categoria=' + encodeURIComponent(document.getElementById('categoria').value) + '&formulario_id=' + this.value;">
                                                     <?php foreach ($subcategoriasDisponibles as $formulario): ?>
                                                         <option value="<?= (int) ($formulario['id'] ?? 0) ?>" <?= (int) ($formData['formulario_id'] ?? 0) === (int) ($formulario['id'] ?? 0) ? 'selected' : '' ?>>
@@ -293,15 +299,19 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                     </div>
 
                                     <div class="score-summary">
-                                        <div>
+                                        <div class="score-summary-column">
                                             <div class="score-summary-label">Resultado de la calificacion</div>
                                             <div class="score-summary-label">Se actualiza en tiempo real.</div>
-                                        </div>
-                                        <div class="score-blocks">
-                                            <div>
-                                                <div class="score-summary-label">Total</div>
-                                                <div class="score-summary-value" id="puntajeTotal">0</div>
+                                            <div class="score-blocks">
+                                                <div>
+                                                    <div class="score-summary-label">Total</div>
+                                                    <div class="score-summary-value" id="puntajeTotal">0</div>
+                                                </div>
                                             </div>
+                                        </div>
+                                        <div class="score-summary-column">
+                                            <div class="score-summary-label">Puesto tentativo</div>
+                                            <div class="tentative-rank rank-empty" id="puestoTentativo">Sin definir</div>
                                         </div>
                                     </div>
 
@@ -453,6 +463,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
     <script>
         const scoreSelects = document.querySelectorAll('.score-slider');
         const puntajeTotal = document.getElementById('puntajeTotal');
+        const puestoTentativo = document.getElementById('puestoTentativo');
         const competidorNumeroInput = document.getElementById('competidor_numero');
         const resumenCompetidorNumero = document.getElementById('resumenCompetidorNumero');
         const formularioSelect = document.getElementById('formulario_id');
@@ -632,6 +643,19 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
             return Number(value || 0).toFixed(decimals).replace('.', ',');
         }
 
+        function getTentativeRank(total) {
+            if (total >= 95) {
+                return { label: 'Primer Lugar', className: 'rank-first' };
+            }
+            if (total >= 85) {
+                return { label: 'Segundo Lugar', className: 'rank-second' };
+            }
+            if (total >= 74) {
+                return { label: 'Tercer Lugar', className: 'rank-third' };
+            }
+            return { label: 'Sin definir', className: 'rank-empty' };
+        }
+
         function getThemeDisplayValue(key, value) {
             if (['baseFontSize', 'panelPadding', 'cardRadius', 'controlRadius', 'shadowBlur', 'shadowY'].includes(key)) {
                 return `${value}px`;
@@ -767,6 +791,11 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 }
             });
             if (puntajeTotal) puntajeTotal.textContent = formatScore(total, 1);
+            if (puestoTentativo) {
+                const rank = getTentativeRank(total);
+                puestoTentativo.textContent = rank.label;
+                puestoTentativo.className = `tentative-rank ${rank.className}`;
+            }
             if (resumenCompetidorNumero && competidorNumeroInput) {
                 const numero = competidorNumeroInput.value.trim();
                 resumenCompetidorNumero.textContent = numero !== '' ? numero : 'Sin completar';
@@ -796,7 +825,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 modalCompetidor.textContent = competidorNumeroInput.value.trim() || '-';
             }
             if (modalResultado) {
-                modalResultado.textContent = `Total ${puntajeTotal?.textContent || '0,0'}`;
+                modalResultado.textContent = `Total ${puntajeTotal?.textContent || '0,0'} | ${puestoTentativo?.textContent || 'Sin definir'}`;
             }
             if (modalCriterios) {
                 modalCriterios.innerHTML = '';
