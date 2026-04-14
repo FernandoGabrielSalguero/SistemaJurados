@@ -92,6 +92,10 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
         .btn-secondary,.btn-danger,.btn-outline { border:1px solid #d6dfef; border-radius:14px; background:#fff; color:#334155; padding:12px 18px; font-weight:800; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
         .btn-danger { border-color:#fecaca; color:#b91c1c; background:#fff5f5; }
         .btn-outline { border-color:#bfdbfe; color:#1d4ed8; background:#eff6ff; }
+        .icon-action { width:40px; height:40px; border-radius:12px; border:1px solid #d6dfef; background:#fff; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; text-decoration:none; }
+        .icon-action .material-icons { font-size:20px; }
+        .icon-action.edit { color:#1d4ed8; border-color:#bfdbfe; background:#eff6ff; }
+        .icon-action.delete { color:#b91c1c; border-color:#fecaca; background:#fff5f5; }
         .table-responsive { margin-top:18px; border:1px solid var(--border); border-radius:16px; width:100%; max-width:100%; overflow:auto; -webkit-overflow-scrolling:touch; }
         .table { width:100%; min-width:1160px; border-collapse:collapse; }
         .table thead th { background:#f8fafc; color:#5b6472; border-bottom:1px solid var(--border); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; padding:12px 14px; text-align:left; }
@@ -113,6 +117,13 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
         .switch-state.disabled { color:#6b7280; }
         .action-cell { white-space:nowrap; }
         .inline-form { margin:0; }
+        .confirm-overlay { position:fixed; inset:0; background:rgba(15,23,42,.48); display:none; align-items:center; justify-content:center; padding:20px; z-index:120; }
+        .confirm-overlay.open { display:flex; }
+        .confirm-dialog { width:min(100%,420px); background:#fff; border-radius:22px; border:1px solid var(--border); box-shadow:0 24px 60px rgba(15,23,42,.22); padding:24px; }
+        .confirm-icon { width:56px; height:56px; border-radius:16px; display:inline-flex; align-items:center; justify-content:center; background:#fff5f5; color:#b91c1c; margin-bottom:14px; }
+        .confirm-title { margin:0 0 8px; font-size:1.15rem; font-weight:800; color:#202633; }
+        .confirm-text { margin:0; color:var(--muted); line-height:1.55; }
+        .confirm-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; flex-wrap:wrap; }
         .empty-state { min-height:240px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed #cdd9ee; border-radius:18px; background:linear-gradient(180deg,#fbfdff 0%,#f6f9ff 100%); padding:32px 20px; }
         .empty-state-box { max-width:480px; }
         .empty-state-icon { width:72px; height:72px; margin:0 auto 18px; border-radius:20px; display:inline-flex; align-items:center; justify-content:center; background:var(--primary-soft); color:var(--primary); }
@@ -264,12 +275,18 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
                                                     </form>
                                                 </td>
                                                 <td class="action-cell">
-                                                    <form method="post" class="inline-form" onsubmit="return confirm('Se eliminaran el formulario, sus criterios, sus evaluaciones y sus respuestas. Continuar?');">
+                                                    <form method="post" class="inline-form js-delete-form">
                                                         <input type="hidden" name="eliminar_formulario_id" value="<?= (int) ($formulario['id'] ?? 0) ?>">
-                                                        <button type="submit" class="btn-danger">Eliminar</button>
+                                                        <button type="button" class="icon-action delete js-delete-trigger" aria-label="Eliminar formulario" title="Eliminar formulario">
+                                                            <span class="material-icons">delete</span>
+                                                        </button>
                                                     </form>
                                                 </td>
-                                                <td class="action-cell"><a href="admin_calificaciones.php?editar=<?= (int) ($formulario['id'] ?? 0) ?>" class="btn-outline">Editar</a></td>
+                                                <td class="action-cell">
+                                                    <a href="admin_calificaciones.php?editar=<?= (int) ($formulario['id'] ?? 0) ?>" class="icon-action edit" aria-label="Editar formulario" title="Editar formulario">
+                                                        <span class="material-icons">edit</span>
+                                                    </a>
+                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -290,6 +307,18 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
         </div>
     </div>
 
+    <div class="confirm-overlay" id="deleteConfirmModal" aria-hidden="true">
+        <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+            <div class="confirm-icon" aria-hidden="true"><span class="material-icons">delete_forever</span></div>
+            <h3 class="confirm-title" id="deleteConfirmTitle">Eliminar formulario</h3>
+            <p class="confirm-text">Se eliminaran el formulario, sus criterios, sus evaluaciones y sus respuestas asociadas. Esta accion no se puede deshacer.</p>
+            <div class="confirm-actions">
+                <button type="button" class="btn-secondary" id="deleteConfirmCancel">Cancelar</button>
+                <button type="button" class="btn-danger" id="deleteConfirmAccept">Eliminar definitivamente</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const body = document.body;
         const sidebar = document.getElementById('sidebar');
@@ -297,6 +326,11 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
         const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
         const scoreInputs = document.querySelectorAll('.criterio-puntaje');
         const scoreSummaryValue = document.getElementById('scoreSummaryValue');
+        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        const deleteConfirmCancel = document.getElementById('deleteConfirmCancel');
+        const deleteConfirmAccept = document.getElementById('deleteConfirmAccept');
+        const deleteTriggers = document.querySelectorAll('.js-delete-trigger');
+        let deleteTargetForm = null;
 
         function updateScoreSummary() {
             let total = 0;
@@ -322,6 +356,42 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
 
         mobileBreakpoint.addEventListener('change', () => { body.classList.remove('sidebar-open'); });
         scoreInputs.forEach((input) => input.addEventListener('input', updateScoreSummary));
+
+        function closeDeleteModal() {
+            deleteTargetForm = null;
+            deleteConfirmModal?.classList.remove('open');
+            deleteConfirmModal?.setAttribute('aria-hidden', 'true');
+        }
+
+        function openDeleteModal(formElement) {
+            deleteTargetForm = formElement;
+            deleteConfirmModal?.classList.add('open');
+            deleteConfirmModal?.setAttribute('aria-hidden', 'false');
+        }
+
+        deleteTriggers.forEach((button) => {
+            button.addEventListener('click', () => {
+                const formElement = button.closest('.js-delete-form');
+                if (!formElement) return;
+                openDeleteModal(formElement);
+            });
+        });
+
+        deleteConfirmCancel?.addEventListener('click', closeDeleteModal);
+        deleteConfirmModal?.addEventListener('click', (event) => {
+            if (event.target === deleteConfirmModal) {
+                closeDeleteModal();
+            }
+        });
+        deleteConfirmAccept?.addEventListener('click', () => {
+            if (!deleteTargetForm) return;
+            deleteTargetForm.submit();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && deleteConfirmModal?.classList.contains('open')) {
+                closeDeleteModal();
+            }
+        });
 
         function lockFrameworkTheme() {
             const root = document.documentElement;
