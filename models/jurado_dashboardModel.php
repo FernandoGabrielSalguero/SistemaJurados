@@ -19,7 +19,8 @@ class JuradoDashboardModel
                     a.usuario,
                     a.rol,
                     a.creado_en,
-                    iu.nombre
+                    iu.nombre,
+                    iu.avatar_path
              FROM auth
              AS a
              LEFT JOIN informacion_usuarios AS iu
@@ -67,7 +68,7 @@ class JuradoDashboardModel
     public function obtenerFormulariosActivosConCriterios(): array
     {
         $stmt = $this->db->query(
-            "SELECT id, subcategoria, categoria, evento_nombre, activo
+            "SELECT id, subcategoria, categoria, evento_nombre, imagen_url, activo
              FROM calificacion_formularios
              WHERE activo = 1
              ORDER BY categoria ASC, subcategoria ASC, creado_en DESC, id DESC"

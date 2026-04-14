@@ -67,6 +67,7 @@ Columna	Tipo	Nulo	Clave	Default	Extra
 id	int(10) unsigned	NO	PRI		auto_increment
 user_auth_id	int(10) unsigned	NO	UNI		
 nombre	varchar(150)	NO			
+avatar_path	varchar(255)	YES			
 creado_en	timestamp	YES		current_timestamp()	
 actualizado_en	timestamp	YES		current_timestamp()	on update current_timestamp()
 

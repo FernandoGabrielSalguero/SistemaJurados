@@ -13,6 +13,57 @@ $formularioSeleccionado = $viewData['formularioSeleccionado'] ?? null;
 $mensaje = $viewData['mensaje'] ?? '';
 $mensajeTipo = $viewData['mensajeTipo'] ?? 'success';
 $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, 'competidor_numero' => '', 'puntajes' => []];
+
+function juradoDashboardBuildMediaUrl(?string $path): string
+{
+    $path = trim((string) $path);
+    if ($path === '') {
+        return '';
+    }
+
+    if (preg_match('#^(https?:)?//#i', $path) === 1 || str_starts_with($path, 'data:')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, '../../') || str_starts_with($path, '../')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, '/')) {
+        return '../..' . $path;
+    }
+
+    return '../../' . ltrim($path, './');
+}
+
+function juradoDashboardInitials(string $label): string
+{
+    $words = preg_split('/\s+/', trim($label)) ?: [];
+    $initials = '';
+
+    foreach ($words as $word) {
+        if ($word === '') {
+            continue;
+        }
+
+        $initials .= function_exists('mb_substr')
+            ? mb_strtoupper(mb_substr($word, 0, 1, 'UTF-8'), 'UTF-8')
+            : strtoupper(substr($word, 0, 1));
+
+        if (strlen($initials) >= 2) {
+            break;
+        }
+    }
+
+    return $initials !== '' ? $initials : 'JD';
+}
+
+$juradoNombre = (string) ($jurado['nombre'] ?? $jurado['usuario'] ?? $usuarioSesion);
+$eventoNombre = (string) ($formularioSeleccionado['evento_nombre'] ?? '');
+$juradoAvatarUrl = juradoDashboardBuildMediaUrl((string) ($jurado['avatar_path'] ?? ''));
+$eventoImagenUrl = juradoDashboardBuildMediaUrl((string) ($formularioSeleccionado['imagen_url'] ?? ''));
+$juradoInitials = juradoDashboardInitials($juradoNombre);
+$eventoInitials = juradoDashboardInitials($eventoNombre !== '' ? $eventoNombre : 'Evento');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -81,7 +132,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .alert-inline.danger { background:var(--danger-soft); color:var(--danger); border-color:#fecaca; }
         .alert-inline.warning { background:var(--warning-soft); color:var(--warning); border-color:#fed7aa; }
         .form-stack { display:flex; flex-direction:column; gap:18px; }
-        .form-layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr); gap:20px; align-items:start; }
+        .form-layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr); gap:20px; align-items:stretch; }
         .form-main { display:flex; flex-direction:column; gap:18px; min-width:0; }
         .top-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
         .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
@@ -129,7 +180,11 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .tentative-rank.rank-third { background:#ffedd5; color:#c2410c; }
         .tentative-rank.rank-second { background:#fef3c7; color:#b45309; }
         .tentative-rank.rank-first { background:#dcfce7; color:#15803d; }
-        .summary-aside { position:sticky; top:92px; }
+        .summary-aside { position:sticky; top:92px; display:flex; flex-direction:column; align-self:stretch; height:100%; }
+        .summary-avatars { display:flex; align-items:center; gap:12px; margin:0 0 18px; }
+        .summary-avatar { width:58px; height:58px; border-radius:50%; border:2px solid rgba(228,168,0,.24); background:linear-gradient(135deg,#fff6cf,#ffe083); color:#6f4e00; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; box-shadow:0 10px 24px rgba(15,23,42,.12); font-size:1rem; font-weight:800; letter-spacing:.04em; flex:0 0 auto; }
+        .summary-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+        .summary-avatar.event-avatar { margin-left:-18px; border-color:rgba(15,23,42,.12); background:linear-gradient(135deg,#eef2ff,#dbeafe); color:#1e3a8a; }
         .resume-list { display:flex; flex-direction:column; gap:14px; }
         .resume-item { padding-bottom:12px; border-bottom:1px solid var(--border); }
         .resume-item:last-child { padding-bottom:0; border-bottom:0; }
@@ -137,7 +192,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
         .resume-item-value { color:var(--text); font-size:.98rem; font-weight:800; word-break:break-word; }
         .summary-aside .score-summary { margin-top:18px; }
         .summary-aside .score-blocks { width:100%; justify-content:flex-start; }
-        .form-actions { display:flex; justify-content:stretch; margin-top:18px; }
+        .form-actions { display:flex; justify-content:stretch; margin-top:auto; padding-top:18px; }
         .btn-primary { border:0; border-radius:var(--control-radius); background:linear-gradient(135deg,var(--primary),var(--primary-strong)); color:var(--primary-text); padding:12px 18px; font-weight:800; cursor:pointer; transition:border-radius .25s ease,background .25s ease,color .25s ease; }
         .empty-state { min-height:260px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed var(--border); border-radius:18px; background:linear-gradient(180deg,color-mix(in srgb, var(--surface) 88%, #fff7d6 12%) 0%,color-mix(in srgb, var(--surface) 92%, #fffbef 8%) 100%); padding:32px 20px; }
         .empty-state-box { max-width:480px; }
@@ -272,6 +327,22 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                 </div>
 
                                 <aside class="panel-card summary-aside">
+                                    <div class="summary-avatars" aria-hidden="true">
+                                        <div class="summary-avatar" title="Jurado">
+                                            <?php if ($juradoAvatarUrl !== ''): ?>
+                                                <img src="<?= htmlspecialchars($juradoAvatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Foto del jurado <?= htmlspecialchars($juradoNombre, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?php else: ?>
+                                                <span><?= htmlspecialchars($juradoInitials, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="summary-avatar event-avatar" title="Evento">
+                                            <?php if ($eventoImagenUrl !== ''): ?>
+                                                <img src="<?= htmlspecialchars($eventoImagenUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Imagen del evento <?= htmlspecialchars($eventoNombre, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?php else: ?>
+                                                <span><?= htmlspecialchars($eventoInitials, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
                                     <h3 class="section-title">Resumen</h3>
                                     <p class="section-caption">Vista previa de la calificacion que estas cargando.</p>
 
@@ -303,7 +374,6 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                             <div class="score-summary-label">Resultado de la calificacion</div>
                                             <div class="score-blocks">
                                                 <div>
-                                                    <div class="score-summary-label">Total</div>
                                                     <div class="score-summary-value" id="puntajeTotal">0</div>
                                                 </div>
                                             </div>
