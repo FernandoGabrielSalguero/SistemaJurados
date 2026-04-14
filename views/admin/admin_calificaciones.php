@@ -148,29 +148,29 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                     </section>
 
                     <section class="metrics-grid">
-                        <article class="metric-card"><div class="metric-label">Subcategorias creadas</div><div class="metric-value"><?= (int) ($metricas['formularios_total'] ?? 0) ?></div><div class="metric-help">Plantillas cargadas por administracion.</div></article>
-                        <article class="metric-card"><div class="metric-label">Subcategorias activas</div><div class="metric-value"><?= (int) ($metricas['formularios_activos'] ?? 0) ?></div><div class="metric-help">Disponibles para jurados.</div></article>
+                        <article class="metric-card"><div class="metric-label">Formularios creados</div><div class="metric-value"><?= (int) ($metricas['formularios_total'] ?? 0) ?></div><div class="metric-help">Formularios configurados por administracion.</div></article>
+                        <article class="metric-card"><div class="metric-label">Formularios activos</div><div class="metric-value"><?= (int) ($metricas['formularios_activos'] ?? 0) ?></div><div class="metric-help">Disponibles para jurados.</div></article>
                         <article class="metric-card"><div class="metric-label">Categorias cubiertas</div><div class="metric-value"><?= (int) ($metricas['categorias_total'] ?? 0) ?></div><div class="metric-help">Categorias con configuracion propia.</div></article>
                         <article class="metric-card"><div class="metric-label">Evaluaciones guardadas</div><div class="metric-value"><?= (int) ($metricas['evaluaciones_total'] ?? 0) ?></div><div class="metric-help">Se completara en la vista del jurado.</div></article>
                     </section>
 
                     <section class="panel-card form-section">
-                            <h2 class="section-title">Crear subcategoria de calificacion</h2>
-                            <p class="section-caption">El administrador define subcategoria, categoria, evento y el puntaje maximo de cada criterio. La suma total siempre debe ser 100.</p>
+                            <h2 class="section-title">Crear formulario de calificacion</h2>
+                            <p class="section-caption">El administrador define el estilo, la categoria, el evento y el puntaje maximo de cada criterio del formulario. La suma total siempre debe ser 100.</p>
                             <form method="post" id="formularioCalificacion">
                                 <input type="hidden" name="guardar_formulario" value="1">
                                 <div class="form-grid">
+                                    <div class="form-field full">
+                                        <label for="evento_nombre">Nombre del evento</label>
+                                        <input type="text" id="evento_nombre" name="evento_nombre" value="<?= htmlspecialchars((string) ($formData['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Campeonato Nacional 2026" required>
+                                    </div>
                                     <div class="form-field">
-                                        <label for="subcategoria">Subcategoria</label>
+                                        <label for="subcategoria">Estilo</label>
                                         <input type="text" id="subcategoria" name="subcategoria" value="<?= htmlspecialchars((string) ($formData['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Malambo escenico" required>
                                     </div>
                                     <div class="form-field">
                                         <label for="categoria">Categoria</label>
                                         <input type="text" id="categoria" name="categoria" value="<?= htmlspecialchars((string) ($formData['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Adultos parejas" required>
-                                    </div>
-                                    <div class="form-field full">
-                                        <label for="evento_nombre">Nombre del evento</label>
-                                        <input type="text" id="evento_nombre" name="evento_nombre" value="<?= htmlspecialchars((string) ($formData['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Campeonato Nacional 2026" required>
                                     </div>
                                 </div>
                                 <div class="criterios-grid">
@@ -191,18 +191,18 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                     <div><div class="score-summary-label">Suma total de puntos</div><div class="score-summary-label">Debe cerrar exactamente en 100.</div></div>
                                     <div class="score-summary-value" id="scoreSummaryValue">0</div>
                                 </div>
-                                    <div class="form-actions"><button type="submit" class="btn-primary">Guardar subcategoria</button></div>
+                                    <div class="form-actions"><button type="submit" class="btn-primary">Guardar formulario</button></div>
                             </form>
                     </section>
 
                     <section class="panel-card">
-                        <h2 class="section-title">Subcategorias creadas</h2>
-                        <p class="section-caption">Listado de configuraciones ya disponibles para usar en el modulo de jurados.</p>
+                        <h2 class="section-title">Formularios de calificacion creados</h2>
+                        <p class="section-caption">Listado de formularios ya disponibles para usar en el modulo de jurados.</p>
                         <?php if ($formularios): ?>
                             <div class="table-responsive">
                                 <table class="table">
                                     <thead>
-                                        <tr><th>ID</th><th>Subcategoria</th><th>Evento</th><th>Categoria</th><th>Criterios</th><th>Total</th><th>Evaluaciones</th><th>Estado</th><th>Accion</th></tr>
+                                        <tr><th>ID</th><th>Estilo</th><th>Evento</th><th>Categoria</th><th>Criterios</th><th>Total</th><th>Evaluaciones</th><th>Estado</th><th>Accion</th></tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($formularios as $formulario): ?>
@@ -234,8 +234,8 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                             <div class="empty-state">
                                 <div class="empty-state-box">
                                     <div class="empty-state-icon" aria-hidden="true"><span class="material-icons">playlist_add_check</span></div>
-                                    <h2>No hay subcategorias creadas todavia</h2>
-                                    <p>Una vez que ejecutes las tablas nuevas y guardes la primera subcategoria, la vas a ver listada aca con sus criterios, total y estado.</p>
+                                    <h2>No hay formularios creados todavia</h2>
+                                    <p>Una vez que ejecutes las tablas nuevas y guardes el primer formulario, lo vas a ver listado aca con sus criterios, total y estado.</p>
                                 </div>
                             </div>
                         <?php endif; ?>
