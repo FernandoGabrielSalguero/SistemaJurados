@@ -54,6 +54,7 @@ id	int(10) unsigned	NO	PRI		auto_increment
 subcategoria	varchar(180)	NO			
 categoria	varchar(180)	NO	MUL		
 evento_nombre	varchar(180)	NO	MUL		
+imagen_url	varchar(255)	YES			
 activo	tinyint(1)	NO	MUL	1	
 creado_por	int(10) unsigned	NO	MUL		
 creado_en	timestamp	YES		current_timestamp()	

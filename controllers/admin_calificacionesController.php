@@ -57,8 +57,50 @@ function adminCalificacionesNormalizarNombreArchivo(string $nombre): string
     return $nombre !== '' ? $nombre : 'evento';
 }
 
+function adminCalificacionesRutaAbsolutaDesdeRelativa(?string $rutaRelativa): string
+{
+    $rutaRelativa = trim((string) $rutaRelativa);
+    if ($rutaRelativa === '') {
+        return '';
+    }
+
+    return dirname(__DIR__) . '/' . ltrim(str_replace('\\', '/', $rutaRelativa), '/');
+}
+
+$modoEdicion = false;
+$formularioEditandoId = 0;
+
+if (isset($_GET['editar'])) {
+    $formularioEditandoId = (int) ($_GET['editar'] ?? 0);
+    if ($formularioEditandoId > 0 && ($estadoTablas['formularios_listos'] ?? false)) {
+        $formularioEditando = $model->obtenerFormularioPorId($formularioEditandoId);
+        if ($formularioEditando) {
+            $modoEdicion = true;
+            $formData['subcategoria'] = (string) ($formularioEditando['subcategoria'] ?? '');
+            $formData['categoria'] = (string) ($formularioEditando['categoria'] ?? '');
+            $formData['evento_nombre'] = (string) ($formularioEditando['evento_nombre'] ?? '');
+            $formData['imagen_url'] = (string) ($formularioEditando['imagen_url'] ?? '');
+            $formData['activo'] = (int) ($formularioEditando['activo'] ?? 0);
+            foreach (($formularioEditando['criterios'] ?? []) as $criterio) {
+                $clave = (string) ($criterio['criterio_clave'] ?? '');
+                if ($clave !== '') {
+                    $formData['puntajes'][$clave] = (string) ((int) ($criterio['puntaje_maximo'] ?? 0));
+                }
+            }
+        } else {
+            $_SESSION['admin_calificaciones_flash'] = [
+                'mensaje' => 'No se encontro el formulario seleccionado para editar.',
+                'tipo' => 'danger',
+            ];
+            adminCalificacionesRedirect();
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['guardar_formulario'])) {
+        $formularioEditandoId = (int) ($_POST['formulario_id'] ?? 0);
+        $modoEdicion = $formularioEditandoId > 0;
         $formData['subcategoria'] = trim((string) ($_POST['subcategoria'] ?? ''));
         $formData['categoria'] = trim((string) ($_POST['categoria'] ?? ''));
         $formData['evento_nombre'] = trim((string) ($_POST['evento_nombre'] ?? ''));
@@ -102,6 +144,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $imagenTmpPath = '';
                 $imagenDestinoAbsoluto = '';
+                $imagenAnteriorRelativa = $formData['imagen_url'];
+                $eliminarImagenActual = isset($_POST['eliminar_imagen_actual']);
+
+                if ($modoEdicion && $formularioEditandoId <= 0) {
+                    $mensaje = 'No se encontro el formulario a editar.';
+                    $mensajeTipo = 'danger';
+                } elseif ($modoEdicion) {
+                    $formularioActual = $model->obtenerFormularioPorId($formularioEditandoId);
+                    if (!$formularioActual) {
+                        $mensaje = 'No se encontro el formulario a editar.';
+                        $mensajeTipo = 'danger';
+                    } else {
+                        $imagenAnteriorRelativa = (string) ($formularioActual['imagen_url'] ?? '');
+                        $formData['imagen_url'] = $imagenAnteriorRelativa;
+                    }
+                }
 
                 if (isset($_FILES['imagen_evento']) && (int) ($_FILES['imagen_evento']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
                     if (!(bool) ($estadoTablas['imagen_columna_lista'] ?? false)) {
@@ -138,6 +196,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
                     }
+                } elseif ($eliminarImagenActual && (bool) ($estadoTablas['imagen_columna_lista'] ?? false)) {
+                    $formData['imagen_url'] = '';
                 }
 
                 try {
@@ -149,18 +209,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         throw new RuntimeException('No se pudo mover la imagen subida.');
                     }
 
-                    $model->crearFormulario([
-                        'subcategoria' => $formData['subcategoria'],
-                        'categoria' => $formData['categoria'],
-                        'evento_nombre' => $formData['evento_nombre'],
-                        'imagen_url' => $formData['imagen_url'] !== '' ? $formData['imagen_url'] : null,
-                        'activo' => $formData['activo'],
-                        'creado_por' => $userId,
-                        'criterios' => $puntajes,
-                    ]);
+                    if ($modoEdicion) {
+                        $model->actualizarFormulario($formularioEditandoId, [
+                            'subcategoria' => $formData['subcategoria'],
+                            'categoria' => $formData['categoria'],
+                            'evento_nombre' => $formData['evento_nombre'],
+                            'imagen_url' => $formData['imagen_url'] !== '' ? $formData['imagen_url'] : null,
+                            'activo' => $formData['activo'],
+                            'criterios' => $puntajes,
+                        ]);
+                    } else {
+                        $model->crearFormulario([
+                            'subcategoria' => $formData['subcategoria'],
+                            'categoria' => $formData['categoria'],
+                            'evento_nombre' => $formData['evento_nombre'],
+                            'imagen_url' => $formData['imagen_url'] !== '' ? $formData['imagen_url'] : null,
+                            'activo' => $formData['activo'],
+                            'creado_por' => $userId,
+                            'criterios' => $puntajes,
+                        ]);
+                    }
+
+                    if ($imagenAnteriorRelativa !== '' && $imagenAnteriorRelativa !== $formData['imagen_url']) {
+                        $imagenAnteriorAbsoluta = adminCalificacionesRutaAbsolutaDesdeRelativa($imagenAnteriorRelativa);
+                        if ($imagenAnteriorAbsoluta !== '' && is_file($imagenAnteriorAbsoluta)) {
+                            @unlink($imagenAnteriorAbsoluta);
+                        }
+                    }
 
                     $_SESSION['admin_calificaciones_flash'] = [
-                        'mensaje' => 'Formulario creado correctamente.',
+                        'mensaje' => $modoEdicion ? 'Formulario actualizado correctamente.' : 'Formulario creado correctamente.',
                         'tipo' => 'success',
                     ];
                     adminCalificacionesRedirect();
@@ -206,6 +284,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         adminCalificacionesRedirect();
     }
+
+    if (isset($_POST['eliminar_formulario_id'])) {
+        $formularioId = (int) ($_POST['eliminar_formulario_id'] ?? 0);
+
+        if (!$estadoTablas['formularios_listos']) {
+            $_SESSION['admin_calificaciones_flash'] = [
+                'mensaje' => 'Faltan tablas del modulo de calificaciones. Ejecuta primero el SQL nuevo en assets/estructura_base_datos.md.',
+                'tipo' => 'danger',
+            ];
+            adminCalificacionesRedirect();
+        }
+
+        try {
+            $resultado = $model->eliminarFormularioEnCascada($formularioId);
+            if ((bool) ($resultado['eliminado'] ?? false)) {
+                $imagenAbsoluta = adminCalificacionesRutaAbsolutaDesdeRelativa((string) ($resultado['imagen_url'] ?? ''));
+                if ($imagenAbsoluta !== '' && is_file($imagenAbsoluta)) {
+                    @unlink($imagenAbsoluta);
+                }
+            }
+
+            $_SESSION['admin_calificaciones_flash'] = [
+                'mensaje' => (bool) ($resultado['eliminado'] ?? false)
+                    ? 'Formulario, criterios y evaluaciones eliminados correctamente.'
+                    : 'No se encontro el formulario seleccionado.',
+                'tipo' => (bool) ($resultado['eliminado'] ?? false) ? 'success' : 'danger',
+            ];
+        } catch (Throwable $e) {
+            $_SESSION['admin_calificaciones_flash'] = [
+                'mensaje' => 'No se pudo eliminar el formulario seleccionado.',
+                'tipo' => 'danger',
+            ];
+        }
+
+        adminCalificacionesRedirect();
+    }
 }
 
 $formularios = $estadoTablas['formularios_listos'] ? $model->obtenerFormulariosConCriterios() : [];
@@ -225,4 +339,6 @@ $viewData = [
     'mensaje' => $mensaje,
     'mensajeTipo' => $mensajeTipo,
     'formData' => $formData,
+    'modoEdicion' => $modoEdicion,
+    'formularioEditandoId' => $formularioEditandoId,
 ];

@@ -157,6 +157,189 @@ class AdminCalificacionesModel
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function obtenerFormularioPorId(int $formularioId): array
+    {
+        $tieneImagenUrl = $this->columnaExiste('calificacion_formularios', 'imagen_url');
+
+        $sql = "SELECT f.id,
+                       f.subcategoria,
+                       f.categoria,
+                       f.evento_nombre,
+                       " . ($tieneImagenUrl ? "f.imagen_url" : "NULL AS imagen_url") . ",
+                       f.activo,
+                       f.creado_por,
+                       f.creado_en
+                FROM calificacion_formularios f
+                WHERE f.id = :id
+                LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $formularioId]);
+        $formulario = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        if (!$formulario) {
+            return [];
+        }
+
+        $criterios = $this->obtenerCriteriosPorFormularioIds([$formularioId]);
+        $formulario['criterios'] = $criterios[$formularioId] ?? [];
+
+        return $formulario;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function actualizarFormulario(int $formularioId, array $data): bool
+    {
+        $this->db->beginTransaction();
+
+        try {
+            if ($this->columnaExiste('calificacion_formularios', 'imagen_url')) {
+                $stmtFormulario = $this->db->prepare(
+                    "UPDATE calificacion_formularios
+                     SET subcategoria = :subcategoria,
+                         categoria = :categoria,
+                         evento_nombre = :evento_nombre,
+                         imagen_url = :imagen_url,
+                         activo = :activo
+                     WHERE id = :id"
+                );
+
+                $stmtFormulario->execute([
+                    'id' => $formularioId,
+                    'subcategoria' => $data['subcategoria'],
+                    'categoria' => $data['categoria'],
+                    'evento_nombre' => $data['evento_nombre'],
+                    'imagen_url' => $data['imagen_url'] ?? null,
+                    'activo' => (int) ($data['activo'] ?? 0),
+                ]);
+            } else {
+                $stmtFormulario = $this->db->prepare(
+                    "UPDATE calificacion_formularios
+                     SET subcategoria = :subcategoria,
+                         categoria = :categoria,
+                         evento_nombre = :evento_nombre,
+                         activo = :activo
+                     WHERE id = :id"
+                );
+
+                $stmtFormulario->execute([
+                    'id' => $formularioId,
+                    'subcategoria' => $data['subcategoria'],
+                    'categoria' => $data['categoria'],
+                    'evento_nombre' => $data['evento_nombre'],
+                    'activo' => (int) ($data['activo'] ?? 0),
+                ]);
+            }
+
+            $stmtEliminarCriterios = $this->db->prepare(
+                "DELETE FROM calificacion_formulario_criterios
+                 WHERE formulario_id = :formulario_id"
+            );
+            $stmtEliminarCriterios->execute(['formulario_id' => $formularioId]);
+
+            $stmtCriterio = $this->db->prepare(
+                "INSERT INTO calificacion_formulario_criterios
+                    (formulario_id, criterio_clave, criterio_nombre, puntaje_maximo, orden_visual)
+                 VALUES
+                    (:formulario_id, :criterio_clave, :criterio_nombre, :puntaje_maximo, :orden_visual)"
+            );
+
+            foreach ($data['criterios'] as $criterio) {
+                $stmtCriterio->execute([
+                    'formulario_id' => $formularioId,
+                    'criterio_clave' => $criterio['clave'],
+                    'criterio_nombre' => $criterio['nombre'],
+                    'puntaje_maximo' => (int) $criterio['puntaje_maximo'],
+                    'orden_visual' => (int) $criterio['orden'],
+                ]);
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function eliminarFormularioEnCascada(int $formularioId): array
+    {
+        $this->db->beginTransaction();
+
+        try {
+            $formulario = $this->obtenerFormularioPorId($formularioId);
+            if (!$formulario) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                return ['eliminado' => false, 'imagen_url' => null];
+            }
+
+            if ($this->tablaExiste('calificacion_evaluaciones') && $this->tablaExiste('calificacion_evaluacion_detalles')) {
+                $stmtEvaluaciones = $this->db->prepare(
+                    "SELECT id
+                     FROM calificacion_evaluaciones
+                     WHERE formulario_id = :formulario_id"
+                );
+                $stmtEvaluaciones->execute(['formulario_id' => $formularioId]);
+                $evaluacionIds = array_map(
+                    static fn($id): int => (int) $id,
+                    $stmtEvaluaciones->fetchAll(PDO::FETCH_COLUMN) ?: []
+                );
+
+                if ($evaluacionIds) {
+                    $placeholders = implode(', ', array_fill(0, count($evaluacionIds), '?'));
+
+                    $stmtDetalles = $this->db->prepare(
+                        "DELETE FROM calificacion_evaluacion_detalles
+                         WHERE evaluacion_id IN ($placeholders)"
+                    );
+                    $stmtDetalles->execute($evaluacionIds);
+
+                    $stmtEliminarEvaluaciones = $this->db->prepare(
+                        "DELETE FROM calificacion_evaluaciones
+                         WHERE id IN ($placeholders)"
+                    );
+                    $stmtEliminarEvaluaciones->execute($evaluacionIds);
+                }
+            }
+
+            $stmtEliminarCriterios = $this->db->prepare(
+                "DELETE FROM calificacion_formulario_criterios
+                 WHERE formulario_id = :formulario_id"
+            );
+            $stmtEliminarCriterios->execute(['formulario_id' => $formularioId]);
+
+            $stmtEliminarFormulario = $this->db->prepare(
+                "DELETE FROM calificacion_formularios
+                 WHERE id = :id"
+            );
+            $stmtEliminarFormulario->execute(['id' => $formularioId]);
+
+            $this->db->commit();
+
+            return [
+                'eliminado' => $stmtEliminarFormulario->rowCount() > 0,
+                'imagen_url' => $formulario['imagen_url'] ?? null,
+            ];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function obtenerFormulariosConCriterios(): array

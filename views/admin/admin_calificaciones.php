@@ -13,6 +13,8 @@ $metricas = $viewData['metricas'] ?? [];
 $mensaje = $viewData['mensaje'] ?? '';
 $mensajeTipo = $viewData['mensajeTipo'] ?? 'success';
 $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', 'evento_nombre' => '', 'activo' => 1, 'puntajes' => []];
+$modoEdicion = (bool) ($viewData['modoEdicion'] ?? false);
+$formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="es"> 
@@ -78,15 +80,20 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
         .criterio-item-hint { color:var(--muted); font-size:.8rem; margin-bottom:10px; }
         .field-help { color:var(--muted); font-size:.8rem; line-height:1.45; }
         .image-thumb { width:56px; height:56px; border-radius:12px; object-fit:cover; border:1px solid var(--border); background:#f8fafc; display:block; }
+        .image-thumb.large { width:96px; height:96px; margin-top:8px; }
         .checkbox-field { display:inline-flex; align-items:center; gap:10px; margin-top:14px; font-weight:600; color:#334155; }
         .score-summary { margin-top:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-radius:16px; padding:16px 18px; background:#0f172a; color:#fff; }
         .score-summary-label { font-size:.88rem; color:rgba(255,255,255,.72); }
         .score-summary-value { font-size:2rem; font-weight:800; line-height:1; }
         .score-summary-value.invalid { color:#fca5a5; }
         .form-actions { margin-top:18px; display:flex; justify-content:flex-end; }
+        .form-actions-group { display:flex; gap:10px; width:100%; justify-content:flex-end; flex-wrap:wrap; }
         .btn-primary { border:0; border-radius:14px; background:linear-gradient(135deg,#2f6df6,#4c8bff); color:#fff; padding:12px 18px; font-weight:800; cursor:pointer; }
+        .btn-secondary,.btn-danger,.btn-outline { border:1px solid #d6dfef; border-radius:14px; background:#fff; color:#334155; padding:12px 18px; font-weight:800; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+        .btn-danger { border-color:#fecaca; color:#b91c1c; background:#fff5f5; }
+        .btn-outline { border-color:#bfdbfe; color:#1d4ed8; background:#eff6ff; }
         .table-responsive { margin-top:18px; border:1px solid var(--border); border-radius:16px; width:100%; max-width:100%; overflow:auto; -webkit-overflow-scrolling:touch; }
-        .table { width:100%; min-width:940px; border-collapse:collapse; }
+        .table { width:100%; min-width:1160px; border-collapse:collapse; }
         .table thead th { background:#f8fafc; color:#5b6472; border-bottom:1px solid var(--border); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; padding:12px 14px; text-align:left; }
         .table tbody td { padding:14px; font-size:.9rem; vertical-align:top; border-bottom:1px solid var(--border); }
         .table tbody tr:last-child td { border-bottom:0; }
@@ -104,6 +111,8 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
         .switch-state { font-size:.82rem; font-weight:700; }
         .switch-state.enabled { color:#166534; }
         .switch-state.disabled { color:#6b7280; }
+        .action-cell { white-space:nowrap; }
+        .inline-form { margin:0; }
         .empty-state { min-height:240px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed #cdd9ee; border-radius:18px; background:linear-gradient(180deg,#fbfdff 0%,#f6f9ff 100%); padding:32px 20px; }
         .empty-state-box { max-width:480px; }
         .empty-state-icon { width:72px; height:72px; margin:0 auto 18px; border-radius:20px; display:inline-flex; align-items:center; justify-content:center; background:var(--primary-soft); color:var(--primary); }
@@ -159,10 +168,11 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                     </section>
 
                     <section class="panel-card form-section">
-                            <h2 class="section-title">Crear formulario de calificacion</h2>
-                            <p class="section-caption">El administrador define el estilo, la categoria, el evento y el puntaje maximo de cada criterio del formulario. La suma total siempre debe ser 100.</p>
+                            <h2 class="section-title"><?= $modoEdicion ? 'Editar formulario de calificacion' : 'Crear formulario de calificacion' ?></h2>
+                            <p class="section-caption"><?= $modoEdicion ? 'Actualiza el evento, la categoria, el estilo, la imagen y los puntajes del formulario seleccionado. La suma total siempre debe ser 100.' : 'El administrador define el estilo, la categoria, el evento y el puntaje maximo de cada criterio del formulario. La suma total siempre debe ser 100.' ?></p>
                             <form method="post" id="formularioCalificacion" enctype="multipart/form-data">
                                 <input type="hidden" name="guardar_formulario" value="1">
+                                <input type="hidden" name="formulario_id" value="<?= $modoEdicion ? $formularioEditandoId : 0 ?>">
                                 <input type="hidden" name="imagen_url_actual" value="<?= htmlspecialchars((string) ($formData['imagen_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="form-grid">
                                     <div class="form-field full">
@@ -181,6 +191,11 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                         <label for="imagen_evento">Imagen del formulario</label>
                                         <input type="file" id="imagen_evento" name="imagen_evento" accept=".jpg,.jpeg,.png,.webp,.gif,image/*">
                                         <div class="field-help">Sube una imagen en JPG, PNG, WEBP o GIF. Se guardara en <code>uploads/events</code> y se almacenara su ruta para usarla despues.</div>
+                                        <?php if (!empty($formData['imagen_url'])): ?>
+                                            <?php $imagenFormularioActual = '/' . ltrim(str_replace('\\', '/', (string) $formData['imagen_url']), '/'); ?>
+                                            <img class="image-thumb large" src="<?= htmlspecialchars($imagenFormularioActual, ENT_QUOTES, 'UTF-8') ?>" alt="Imagen actual del formulario">
+                                            <label class="checkbox-field"><input type="checkbox" name="eliminar_imagen_actual" value="1"><span>Eliminar imagen actual al guardar</span></label>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="criterios-grid">
@@ -201,7 +216,12 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                     <div><div class="score-summary-label">Suma total de puntos</div><div class="score-summary-label">Debe cerrar exactamente en 100.</div></div>
                                     <div class="score-summary-value" id="scoreSummaryValue">0</div>
                                 </div>
-                                    <div class="form-actions"><button type="submit" class="btn-primary">Guardar formulario</button></div>
+                                    <div class="form-actions">
+                                        <div class="form-actions-group">
+                                            <?php if ($modoEdicion): ?><a href="admin_calificaciones.php" class="btn-secondary">Cancelar edicion</a><?php endif; ?>
+                                            <button type="submit" class="btn-primary"><?= $modoEdicion ? 'Guardar cambios' : 'Guardar formulario' ?></button>
+                                        </div>
+                                    </div>
                             </form>
                     </section>
 
@@ -212,15 +232,15 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                             <div class="table-responsive">
                                 <table class="table">
                                     <thead>
-                                        <tr><th>ID</th><th>Estilo</th><th>Evento</th><th>Categoria</th><th>Imagen</th><th>Criterios</th><th>Total</th><th>Evaluaciones</th><th>Estado</th><th>Accion</th></tr>
+                                        <tr><th>ID</th><th>Evento</th><th>Categoria</th><th>Estilo</th><th>Imagen</th><th>Criterios</th><th>Total</th><th>Evaluaciones</th><th>Estado</th><th>Accion</th><th>Eliminar</th><th>Editar</th></tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($formularios as $formulario): ?>
                                             <tr>
                                                 <td><?= (int) ($formulario['id'] ?? 0) ?></td>
-                                                <td><strong><?= htmlspecialchars((string) ($formulario['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br><span class="section-caption">Creado por <?= htmlspecialchars((string) ($formulario['creador_usuario'] ?? 'Administrador'), ENT_QUOTES, 'UTF-8') ?></span></td>
                                                 <td><?= htmlspecialchars((string) ($formulario['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                                 <td><?= htmlspecialchars((string) ($formulario['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                <td><strong><?= htmlspecialchars((string) ($formulario['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br><span class="section-caption">Creado por <?= htmlspecialchars((string) ($formulario['creador_usuario'] ?? 'Administrador'), ENT_QUOTES, 'UTF-8') ?></span></td>
                                                 <td>
                                                     <?php if (!empty($formulario['imagen_url'])): ?>
                                                         <?php $imagenUrl = '/' . ltrim(str_replace('\\', '/', (string) $formulario['imagen_url']), '/'); ?>
@@ -233,8 +253,8 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                                 <td><strong><?= (int) ($formulario['puntaje_total'] ?? 0) ?></strong> pts</td>
                                                 <td><?= (int) ($formulario['total_evaluaciones'] ?? 0) ?></td>
                                                 <td><span class="status-pill <?= (int) ($formulario['activo'] ?? 0) === 1 ? 'active' : 'inactive' ?>"><?= (int) ($formulario['activo'] ?? 0) === 1 ? 'Activo' : 'Inactivo' ?></span></td>
-                                                <td>
-                                                    <form method="post">
+                                                <td class="action-cell">
+                                                    <form method="post" class="inline-form">
                                                         <input type="hidden" name="toggle_formulario_id" value="<?= (int) ($formulario['id'] ?? 0) ?>">
                                                         <div class="switch-field">
                                                             <input class="switch-input" type="checkbox" id="formulario_activo_<?= (int) ($formulario['id'] ?? 0) ?>" name="formulario_activo" <?= (int) ($formulario['activo'] ?? 0) === 1 ? 'checked' : '' ?> onchange="this.form.submit()">
@@ -243,6 +263,13 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                                         </div>
                                                     </form>
                                                 </td>
+                                                <td class="action-cell">
+                                                    <form method="post" class="inline-form" onsubmit="return confirm('Se eliminaran el formulario, sus criterios, sus evaluaciones y sus respuestas. Continuar?');">
+                                                        <input type="hidden" name="eliminar_formulario_id" value="<?= (int) ($formulario['id'] ?? 0) ?>">
+                                                        <button type="submit" class="btn-danger">Eliminar</button>
+                                                    </form>
+                                                </td>
+                                                <td class="action-cell"><a href="admin_calificaciones.php?editar=<?= (int) ($formulario['id'] ?? 0) ?>" class="btn-outline">Editar</a></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
