@@ -301,7 +301,6 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                     <div class="score-summary">
                                         <div class="score-summary-column">
                                             <div class="score-summary-label">Resultado de la calificacion</div>
-                                            <div class="score-summary-label">Se actualiza en tiempo real.</div>
                                             <div class="score-blocks">
                                                 <div>
                                                     <div class="score-summary-label">Total</div>
