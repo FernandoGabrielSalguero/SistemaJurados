@@ -302,10 +302,6 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                                                 <div class="score-summary-label">Total</div>
                                                 <div class="score-summary-value" id="puntajeTotal">0</div>
                                             </div>
-                                            <div>
-                                                <div class="score-summary-label">Promedio</div>
-                                                <div class="score-summary-value" id="puntajePromedio">0.00</div>
-                                            </div>
                                         </div>
                                     </div>
 
@@ -457,7 +453,6 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
     <script>
         const scoreSelects = document.querySelectorAll('.score-slider');
         const puntajeTotal = document.getElementById('puntajeTotal');
-        const puntajePromedio = document.getElementById('puntajePromedio');
         const competidorNumeroInput = document.getElementById('competidor_numero');
         const resumenCompetidorNumero = document.getElementById('resumenCompetidorNumero');
         const formularioSelect = document.getElementById('formulario_id');
@@ -771,9 +766,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                     output.textContent = formatScore(value, 1);
                 }
             });
-            const promedio = scoreSelects.length > 0 ? (total / scoreSelects.length) : 0;
             if (puntajeTotal) puntajeTotal.textContent = formatScore(total, 1);
-            if (puntajePromedio) puntajePromedio.textContent = formatScore(promedio, 2);
             if (resumenCompetidorNumero && competidorNumeroInput) {
                 const numero = competidorNumeroInput.value.trim();
                 resumenCompetidorNumero.textContent = numero !== '' ? numero : 'Sin completar';
@@ -803,7 +796,7 @@ $formData = $viewData['formData'] ?? ['categoria' => '', 'formulario_id' => 0, '
                 modalCompetidor.textContent = competidorNumeroInput.value.trim() || '-';
             }
             if (modalResultado) {
-                modalResultado.textContent = `Total ${puntajeTotal?.textContent || '0,0'} | Promedio ${puntajePromedio?.textContent || '0,00'}`;
+                modalResultado.textContent = `Total ${puntajeTotal?.textContent || '0,0'}`;
             }
             if (modalCriterios) {
                 modalCriterios.innerHTML = '';

@@ -929,35 +929,6 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             color: #fff;
         }
 
-        body.sidebar-collapsed .sidebar {
-            flex-basis: var(--sidebar-collapsed-width);
-            width: var(--sidebar-collapsed-width);
-        }
-
-        body.sidebar-collapsed .main {
-            width: auto;
-            max-width: none;
-        }
-
-        body.sidebar-collapsed .logo-text,
-        body.sidebar-collapsed .link-text {
-            display: none;
-        }
-
-        body.sidebar-collapsed .sidebar-menu li {
-            justify-content: center;
-            padding-inline: 10px;
-        }
-
-        body.sidebar-collapsed .sidebar-header,
-        body.sidebar-collapsed .sidebar-footer {
-            justify-content: center;
-        }
-
-        body.sidebar-collapsed .sidebar-menu li .material-icons {
-            margin-right: 0;
-        }
-
         @media (max-width: 1180px) {
             .split-grid {
                 grid-template-columns: 1fr;
@@ -1066,18 +1037,9 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                         <span class="material-icons">analytics</span>
                         <span class="link-text">Resultados</span>
                     </li>
-                    <li onclick="location.href='../../logout.php'">
-                        <span class="material-icons">logout</span>
-                        <span class="link-text">Salir</span>
-                    </li>
                 </ul>
             </nav>
 
-            <div class="sidebar-footer">
-                <button class="btn-icon" type="button" id="collapseSidebarBtn" aria-label="Contraer menú">
-                    <span class="material-icons" id="collapseIcon">chevron_left</span>
-                </button>
-            </div>
         </aside>
 
         <div class="main">
@@ -1323,8 +1285,6 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
     <script>
         const body = document.body;
         const sidebar = document.getElementById('sidebar');
-        const collapseButton = document.getElementById('collapseSidebarBtn');
-        const collapseIcon = document.getElementById('collapseIcon');
         const toggleSidebarButton = document.getElementById('toggleSidebarBtn');
         const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
         const juradoModal = document.getElementById('juradoModal');
@@ -1371,36 +1331,10 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             openJuradoModal();
         }
 
-        function syncSidebarState() {
-            if (mobileBreakpoint.matches) {
-                body.classList.remove('sidebar-collapsed');
-                collapseIcon.textContent = 'chevron_left';
-                return;
-            }
-
-            collapseIcon.textContent = body.classList.contains('sidebar-collapsed')
-                ? 'chevron_right'
-                : 'chevron_left';
-        }
-
-        collapseButton.addEventListener('click', () => {
-            if (mobileBreakpoint.matches) {
-                body.classList.remove('sidebar-open');
-                return;
-            }
-
-            body.classList.toggle('sidebar-collapsed');
-            syncSidebarState();
-        });
-
         toggleSidebarButton.addEventListener('click', () => {
             if (mobileBreakpoint.matches) {
                 body.classList.toggle('sidebar-open');
-                return;
             }
-
-            body.classList.toggle('sidebar-collapsed');
-            syncSidebarState();
         });
 
         document.addEventListener('click', (event) => {
@@ -1417,7 +1351,6 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
 
         mobileBreakpoint.addEventListener('change', () => {
             body.classList.remove('sidebar-open');
-            syncSidebarState();
         });
 
         openJuradoModalBtn?.addEventListener('click', () => {
@@ -1464,7 +1397,6 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             document.getElementById('themeSettingsOverlay')?.remove();
         }
 
-        syncSidebarState();
         lockFrameworkTheme();
         window.addEventListener('load', lockFrameworkTheme);
     </script>

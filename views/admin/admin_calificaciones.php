@@ -107,12 +107,8 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
         .empty-state-icon .material-icons { font-size:34px; }
         .empty-state h2 { margin:0 0 10px; font-size:1.2rem; font-weight:800; }
         .empty-state p { margin:0; color:var(--muted); line-height:1.6; }
-        body.sidebar-collapsed .sidebar { flex-basis:var(--sidebar-collapsed-width); width:var(--sidebar-collapsed-width); }
-        body.sidebar-collapsed .main { width:auto; max-width:none; }
-        body.sidebar-collapsed .logo-text, body.sidebar-collapsed .link-text { display:none; }
-        body.sidebar-collapsed .sidebar-header, body.sidebar-collapsed .sidebar-menu li { justify-content:center; padding-inline:10px; }
         @media (max-width:1180px) { .metrics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .criterios-grid,.form-grid { grid-template-columns:1fr; } .table { min-width:820px; } }
-        @media (max-width:860px) { .sidebar { position:fixed; top:0; left:0; bottom:0; transform:translateX(-100%); flex-basis:min(82vw,260px); width:min(82vw,260px); } body.sidebar-open .sidebar { transform:translateX(0); } .main,body.sidebar-collapsed .main { width:100%; max-width:100%; } .navbar { padding-inline:16px; flex-wrap:wrap; gap:12px; } .navbar-left,.navbar-actions { width:100%; } .navbar-actions { justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; } .metrics-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .form-actions { justify-content:stretch; } .btn-primary { width:100%; } .table { min-width:720px; } .navbar-actions .navbar-subtitle { display:none; } }
+        @media (max-width:860px) { .sidebar { position:fixed; top:0; left:0; bottom:0; transform:translateX(-100%); flex-basis:min(82vw,260px); width:min(82vw,260px); } body.sidebar-open .sidebar { transform:translateX(0); } .main { width:100%; max-width:100%; } .navbar { padding-inline:16px; flex-wrap:wrap; gap:12px; } .navbar-left,.navbar-actions { width:100%; } .navbar-actions { justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; } .metrics-grid { grid-template-columns:1fr; } .score-summary { flex-direction:column; align-items:flex-start; } .form-actions { justify-content:stretch; } .btn-primary { width:100%; } .table { min-width:720px; } .navbar-actions .navbar-subtitle { display:none; } }
         @media (max-width:560px) { .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .navbar { padding:12px; } .logout-link { padding:8px 12px; } .score-summary-value { font-size:1.6rem; } .table { min-width:640px; } }
     </style>
 </head>
@@ -125,7 +121,6 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                     <li onclick="location.href='admin_dashboard.php'"><span class="material-icons">home</span><span class="link-text">Inicio</span></li>
                     <li class="active" onclick="location.href='admin_calificaciones.php'"><span class="material-icons">fact_check</span><span class="link-text">Calificaciones</span></li>
                     <li onclick="location.href='admin_resultados.php'"><span class="material-icons">analytics</span><span class="link-text">Resultados</span></li>
-                    <li onclick="location.href='../../logout.php'"><span class="material-icons">logout</span><span class="link-text">Salir</span></li>
                 </ul>
             </nav>
         </aside>
@@ -133,7 +128,6 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
             <header class="navbar">
                 <div class="navbar-left">
                     <button type="button" class="btn-icon" id="toggleSidebarBtn" aria-label="Mostrar menu lateral"><span class="material-icons">menu</span></button>
-                    <button type="button" class="btn-icon" id="collapseSidebarBtn" aria-label="Colapsar menu lateral"><span class="material-icons" id="collapseIcon">chevron_left</span></button>
                     <div>
                         <div class="navbar-title"><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></div>
                         <div class="navbar-subtitle"><?= htmlspecialchars($pageSubtitle, ENT_QUOTES, 'UTF-8') ?></div>
@@ -254,21 +248,10 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
     <script>
         const body = document.body;
         const sidebar = document.getElementById('sidebar');
-        const collapseButton = document.getElementById('collapseSidebarBtn');
-        const collapseIcon = document.getElementById('collapseIcon');
         const toggleSidebarButton = document.getElementById('toggleSidebarBtn');
         const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
         const scoreInputs = document.querySelectorAll('.criterio-puntaje');
         const scoreSummaryValue = document.getElementById('scoreSummaryValue');
-
-        function syncSidebarState() {
-            if (mobileBreakpoint.matches) {
-                body.classList.remove('sidebar-collapsed');
-                if (collapseIcon) collapseIcon.textContent = 'chevron_left';
-                return;
-            }
-            if (collapseIcon) collapseIcon.textContent = body.classList.contains('sidebar-collapsed') ? 'chevron_right' : 'chevron_left';
-        }
 
         function updateScoreSummary() {
             let total = 0;
@@ -282,14 +265,8 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
             }
         }
 
-        collapseButton?.addEventListener('click', () => {
-            if (mobileBreakpoint.matches) { body.classList.remove('sidebar-open'); return; }
-            body.classList.toggle('sidebar-collapsed'); syncSidebarState();
-        });
-
         toggleSidebarButton?.addEventListener('click', () => {
             if (mobileBreakpoint.matches) { body.classList.toggle('sidebar-open'); return; }
-            body.classList.toggle('sidebar-collapsed'); syncSidebarState();
         });
 
         document.addEventListener('click', (event) => {
@@ -298,7 +275,7 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
             body.classList.remove('sidebar-open');
         });
 
-        mobileBreakpoint.addEventListener('change', () => { body.classList.remove('sidebar-open'); syncSidebarState(); });
+        mobileBreakpoint.addEventListener('change', () => { body.classList.remove('sidebar-open'); });
         scoreInputs.forEach((input) => input.addEventListener('input', updateScoreSummary));
 
         function lockFrameworkTheme() {
@@ -315,7 +292,6 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
         }
 
         updateScoreSummary();
-        syncSidebarState();
         lockFrameworkTheme();
         window.addEventListener('load', lockFrameworkTheme);
     </script>
