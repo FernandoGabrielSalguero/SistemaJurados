@@ -19,6 +19,17 @@ function authTieneColumna(PDO $pdo, string $columna): bool
     }
 }
 
+function informacionUsuariosTieneColumna(PDO $pdo, string $columna): bool
+{
+    try {
+        $stmt = $pdo->prepare("SHOW COLUMNS FROM informacion_usuarios LIKE :columna");
+        $stmt->execute(['columna' => $columna]);
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
 function tablaExiste(PDO $pdo, string $tabla): bool
 {
     try {
@@ -69,9 +80,39 @@ function generarUsuarioUnico(PDO $pdo, string $nombre): string
     }
 }
 
+function normalizarNombreAvatar(string $texto): string
+{
+    $texto = trim($texto);
+    if ($texto === '') {
+        return 'jurado';
+    }
+
+    $transliterado = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+    if ($transliterado !== false) {
+        $texto = $transliterado;
+    }
+
+    $texto = strtolower($texto);
+    $texto = preg_replace('/[^a-z0-9]+/', '-', $texto) ?? 'jurado';
+    $texto = trim($texto, '-');
+
+    return $texto !== '' ? $texto : 'jurado';
+}
+
+function rutaAvatarAbsoluta(?string $rutaRelativa): string
+{
+    $rutaRelativa = trim((string) $rutaRelativa);
+    if ($rutaRelativa === '') {
+        return '';
+    }
+
+    return dirname(__DIR__, 2) . '/' . ltrim(str_replace('\\', '/', $rutaRelativa), '/');
+}
+
 $tieneAccesoHabilitado = authTieneColumna($pdo, 'acceso_habilitado');
 $tieneCodigoVisible = authTieneColumna($pdo, 'codigo_acceso_visible');
 $tieneTablaInformacionUsuarios = tablaExiste($pdo, 'informacion_usuarios');
+$tieneAvatarPath = $tieneTablaInformacionUsuarios && informacionUsuariosTieneColumna($pdo, 'avatar_path');
 $mensaje = '';
 $mensajeTipo = 'success';
 $mostrarModalJurado = false;
@@ -79,11 +120,24 @@ $modoModalJurado = 'crear';
 $juradoEditarId = 0;
 $nombreNuevoJurado = '';
 $codigoNuevoJurado = '';
+$avatarJuradoActual = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_jurado_id'])) {
     $juradoIdEliminar = (int) $_POST['eliminar_jurado_id'];
 
     try {
+        $avatarEliminar = '';
+        if ($tieneTablaInformacionUsuarios && $tieneAvatarPath) {
+            $stmtAvatarEliminar = $pdo->prepare(
+                "SELECT avatar_path
+                 FROM informacion_usuarios
+                 WHERE user_auth_id = :user_auth_id
+                 LIMIT 1"
+            );
+            $stmtAvatarEliminar->execute(['user_auth_id' => $juradoIdEliminar]);
+            $avatarEliminar = (string) ($stmtAvatarEliminar->fetchColumn() ?: '');
+        }
+
         $stmtEliminar = $pdo->prepare(
             "DELETE FROM auth
              WHERE id = :id
@@ -92,6 +146,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_jurado_id'])
         $stmtEliminar->execute(['id' => $juradoIdEliminar]);
 
         if ($stmtEliminar->rowCount() > 0) {
+            $avatarEliminarAbsoluto = rutaAvatarAbsoluta($avatarEliminar);
+            if ($avatarEliminarAbsoluto !== '' && is_file($avatarEliminarAbsoluto)) {
+                @unlink($avatarEliminarAbsoluto);
+            }
             $mensaje = 'Jurado eliminado correctamente.';
             $mensajeTipo = 'success';
         } else {
@@ -110,9 +168,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_jurado'])) {
     $juradoEditarId = (int) ($_POST['jurado_id'] ?? 0);
     $nombreNuevoJurado = trim((string) ($_POST['nombre_jurado'] ?? ''));
     $codigoNuevoJurado = trim((string) ($_POST['codigo_acceso_jurado'] ?? ''));
+    $avatarJuradoActual = trim((string) ($_POST['avatar_jurado_actual'] ?? ''));
 
     if (!$tieneTablaInformacionUsuarios) {
         $mensaje = 'Falta la tabla informacion_usuarios. Primero ejecutá la migración SQL.';
+        $mensajeTipo = 'danger';
+    } elseif (!$tieneAvatarPath) {
+        $mensaje = 'Falta la columna avatar_path en informacion_usuarios. Primero ejecutá la migración SQL.';
         $mensajeTipo = 'danger';
     } elseif ($nombreNuevoJurado === '' || $codigoNuevoJurado === '') {
         $mensaje = 'Completá nombre y código de acceso para crear el jurado.';
@@ -120,6 +182,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_jurado'])) {
     } else {
         try {
             $pdo->beginTransaction();
+            $avatarAnterior = $avatarJuradoActual;
+            $avatarTemporal = '';
+            $avatarDestino = '';
+            $avatarNuevoRelativo = $avatarJuradoActual;
+
+            if ($modoModalJurado === 'editar' && $juradoEditarId > 0) {
+                $stmtAvatarActual = $pdo->prepare(
+                    "SELECT avatar_path
+                     FROM informacion_usuarios
+                     WHERE user_auth_id = :user_auth_id
+                     LIMIT 1"
+                );
+                $stmtAvatarActual->execute(['user_auth_id' => $juradoEditarId]);
+                $avatarAnterior = (string) ($stmtAvatarActual->fetchColumn() ?: '');
+                $avatarNuevoRelativo = $avatarAnterior;
+            }
+
+            if (isset($_FILES['imagen_perfil_jurado']) && (int) ($_FILES['imagen_perfil_jurado']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $archivo = $_FILES['imagen_perfil_jurado'];
+                $error = (int) ($archivo['error'] ?? UPLOAD_ERR_NO_FILE);
+
+                if ($error !== UPLOAD_ERR_OK) {
+                    throw new RuntimeException('No se pudo subir la imagen de perfil.');
+                }
+
+                $extension = strtolower((string) pathinfo((string) ($archivo['name'] ?? ''), PATHINFO_EXTENSION));
+                $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                $mime = (string) mime_content_type((string) ($archivo['tmp_name'] ?? ''));
+                $mimesPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+                if (!in_array($extension, $extensionesPermitidas, true) || !in_array($mime, $mimesPermitidos, true)) {
+                    throw new RuntimeException('La imagen de perfil debe estar en formato JPG, PNG, WEBP o GIF.');
+                }
+
+                $directorioAvatar = dirname(__DIR__, 2) . '/uploads/avatar';
+                if (!is_dir($directorioAvatar) && !mkdir($directorioAvatar, 0775, true) && !is_dir($directorioAvatar)) {
+                    throw new RuntimeException('No se pudo preparar la carpeta uploads/avatar.');
+                }
+
+                $nombreBaseAvatar = normalizarNombreAvatar($nombreNuevoJurado);
+                $nombreArchivoAvatar = $nombreBaseAvatar . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $extension;
+                $avatarDestino = $directorioAvatar . '/' . $nombreArchivoAvatar;
+                $avatarTemporal = (string) ($archivo['tmp_name'] ?? '');
+                $avatarNuevoRelativo = 'uploads/avatar/' . $nombreArchivoAvatar;
+            }
 
             if ($modoModalJurado === 'editar' && $juradoEditarId > 0) {
                 $codigoHash = password_hash($codigoNuevoJurado, PASSWORD_DEFAULT);
@@ -145,22 +252,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_jurado'])) {
 
                 $stmtUpdateInfo = $pdo->prepare(
                     "UPDATE informacion_usuarios
-                     SET nombre = :nombre
+                     SET nombre = :nombre,
+                         avatar_path = :avatar_path
                      WHERE user_auth_id = :user_auth_id"
                 );
                 $stmtUpdateInfo->execute([
                     'nombre' => $nombreNuevoJurado,
+                    'avatar_path' => $avatarNuevoRelativo !== '' ? $avatarNuevoRelativo : null,
                     'user_auth_id' => $juradoEditarId,
                 ]);
 
                 if ($stmtUpdateInfo->rowCount() === 0) {
                     $stmtInsertInfo = $pdo->prepare(
-                        'INSERT INTO informacion_usuarios (user_auth_id, nombre)
-                         VALUES (:user_auth_id, :nombre)'
+                        'INSERT INTO informacion_usuarios (user_auth_id, nombre, avatar_path)
+                         VALUES (:user_auth_id, :nombre, :avatar_path)'
                     );
                     $stmtInsertInfo->execute([
                         'user_auth_id' => $juradoEditarId,
                         'nombre' => $nombreNuevoJurado,
+                        'avatar_path' => $avatarNuevoRelativo !== '' ? $avatarNuevoRelativo : null,
                     ]);
                 }
             } else {
@@ -201,16 +311,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_jurado'])) {
                 $nuevoUserId = (int) $pdo->lastInsertId();
 
                 $stmtInsertInfo = $pdo->prepare(
-                    'INSERT INTO informacion_usuarios (user_auth_id, nombre)
-                     VALUES (:user_auth_id, :nombre)'
+                    'INSERT INTO informacion_usuarios (user_auth_id, nombre, avatar_path)
+                     VALUES (:user_auth_id, :nombre, :avatar_path)'
                 );
                 $stmtInsertInfo->execute([
                     'user_auth_id' => $nuevoUserId,
                     'nombre' => $nombreNuevoJurado,
+                    'avatar_path' => $avatarNuevoRelativo !== '' ? $avatarNuevoRelativo : null,
                 ]);
             }
 
+            if ($avatarTemporal !== '' && !move_uploaded_file($avatarTemporal, $avatarDestino)) {
+                throw new RuntimeException('No se pudo guardar la imagen de perfil del jurado.');
+            }
+
             $pdo->commit();
+
+            if ($avatarAnterior !== '' && $avatarAnterior !== $avatarNuevoRelativo) {
+                $avatarAnteriorAbsoluto = rutaAvatarAbsoluta($avatarAnterior);
+                if ($avatarAnteriorAbsoluto !== '' && is_file($avatarAnteriorAbsoluto)) {
+                    @unlink($avatarAnteriorAbsoluto);
+                }
+            }
+
             $mensaje = $modoModalJurado === 'editar'
                 ? 'Jurado modificado correctamente.'
                 : 'Jurado creado correctamente.';
@@ -220,9 +343,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_jurado'])) {
             $juradoEditarId = 0;
             $nombreNuevoJurado = '';
             $codigoNuevoJurado = '';
+            $avatarJuradoActual = '';
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
+            }
+            if ($avatarDestino !== '' && is_file($avatarDestino)) {
+                @unlink($avatarDestino);
             }
             $mensaje = $modoModalJurado === 'editar'
                 ? 'No se pudo modificar el jurado.'
@@ -270,6 +397,9 @@ if ($tieneCodigoVisible) {
 }
 if ($tieneTablaInformacionUsuarios) {
     $selectJurados .= ", iu.nombre";
+    if ($tieneAvatarPath) {
+        $selectJurados .= ", iu.avatar_path";
+    }
 }
 $selectJurados .= " FROM auth a";
 if ($tieneTablaInformacionUsuarios) {
@@ -1078,6 +1208,11 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                 Falta la columna <code>acceso_habilitado</code> en la tabla <code>auth</code>. Hasta que la agregues, los switches no van a tener efecto.
                             </div>
                         <?php endif; ?>
+                        <?php if ($tieneTablaInformacionUsuarios && !$tieneAvatarPath): ?>
+                            <div class="alert-inline danger">
+                                Falta la columna <code>avatar_path</code> en <code>informacion_usuarios</code>. Hasta que la agregues, no vas a poder guardar imágenes de perfil para jurados.
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="split-grid">
@@ -1105,11 +1240,13 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                                 $accesoHabilitado = $tieneAccesoHabilitado ? (int) ($usuario['acceso_habilitado'] ?? 1) === 1 : true;
                                                 $nombreJuradoTabla = $usuario['usuario'];
                                                 $codigoVisibleTabla = '';
+                                                $avatarJuradoTabla = '';
                                                 if (!$esAdmin) {
                                                     foreach ($jurados as $juradoListado) {
                                                         if ((int) $juradoListado['id'] === (int) $usuario['id']) {
                                                             $nombreJuradoTabla = (string) ($juradoListado['nombre'] ?? $juradoListado['usuario']);
                                                             $codigoVisibleTabla = (string) ($juradoListado['codigo_acceso_visible'] ?? '');
+                                                            $avatarJuradoTabla = (string) ($juradoListado['avatar_path'] ?? '');
                                                             break;
                                                         }
                                                     }
@@ -1152,7 +1289,8 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                                                                     data-jurado-edit="1"
                                                                     data-jurado-id="<?= (int) $usuario['id'] ?>"
                                                                     data-jurado-nombre="<?= htmlspecialchars($nombreJuradoTabla, ENT_QUOTES, 'UTF-8') ?>"
-                                                                    data-jurado-codigo="<?= htmlspecialchars($codigoVisibleTabla, ENT_QUOTES, 'UTF-8') ?>">
+                                                                    data-jurado-codigo="<?= htmlspecialchars($codigoVisibleTabla, ENT_QUOTES, 'UTF-8') ?>"
+                                                                    data-jurado-avatar="<?= htmlspecialchars($avatarJuradoTabla, ENT_QUOTES, 'UTF-8') ?>">
                                                                     <span class="material-icons">edit</span>
                                                                     <span>Modificar</span>
                                                                 </button>
@@ -1246,10 +1384,11 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                 </button>
             </div>
 
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 <input type="hidden" name="guardar_jurado" value="1">
                 <input type="hidden" name="modo_jurado" id="modo_jurado" value="<?= htmlspecialchars($modoModalJurado, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="jurado_id" id="jurado_id" value="<?= (int) $juradoEditarId ?>">
+                <input type="hidden" name="avatar_jurado_actual" id="avatar_jurado_actual" value="<?= htmlspecialchars($avatarJuradoActual, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="form-stack">
                     <div class="form-field">
                         <label for="nombre_jurado">Nombre</label>
@@ -1271,6 +1410,31 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
                             value="<?= htmlspecialchars($codigoNuevoJurado, ENT_QUOTES, 'UTF-8') ?>"
                             autocomplete="off"
                             required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="imagen_perfil_jurado">Imagen de perfil</label>
+                        <input
+                            type="file"
+                            id="imagen_perfil_jurado"
+                            name="imagen_perfil_jurado"
+                            accept=".jpg,.jpeg,.png,.webp,.gif,image/*">
+                        <p class="jurado-code-note">Se guardará en <code>uploads/avatar</code> y se almacenará su ruta en base de datos.</p>
+                        <?php if ($avatarJuradoActual !== ''): ?>
+                            <?php $avatarJuradoActualUrl = '/' . ltrim(str_replace('\\', '/', $avatarJuradoActual), '/'); ?>
+                            <img
+                                src="<?= htmlspecialchars($avatarJuradoActualUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                alt="Avatar actual del jurado"
+                                id="avatarPreviewActual"
+                                style="width:72px;height:72px;object-fit:cover;border-radius:16px;border:1px solid #dbe4f0;margin-top:10px;">
+                        <?php else: ?>
+                            <img
+                                src=""
+                                alt="Avatar actual del jurado"
+                                id="avatarPreviewActual"
+                                hidden
+                                style="width:72px;height:72px;object-fit:cover;border-radius:16px;border:1px solid #dbe4f0;margin-top:10px;">
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -1297,6 +1461,8 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         const juradoIdInput = document.getElementById('jurado_id');
         const nombreJuradoInput = document.getElementById('nombre_jurado');
         const codigoJuradoInput = document.getElementById('codigo_acceso_jurado');
+        const avatarJuradoActualInput = document.getElementById('avatar_jurado_actual');
+        const avatarPreviewActual = document.getElementById('avatarPreviewActual');
         const juradoSubmitButton = document.querySelector('.btn-primary-modal');
         const juradoModalCopy = document.querySelector('.modal-copy');
 
@@ -1311,9 +1477,14 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
         function resetJuradoModalToCreate() {
             if (modoJuradoInput) modoJuradoInput.value = 'crear';
             if (juradoIdInput) juradoIdInput.value = '0';
+            if (avatarJuradoActualInput) avatarJuradoActualInput.value = '';
+            if (avatarPreviewActual) {
+                avatarPreviewActual.setAttribute('hidden', 'hidden');
+                avatarPreviewActual.setAttribute('src', '');
+            }
             if (juradoModalTitle) juradoModalTitle.textContent = 'Añadir jurado';
             if (juradoModalCopy) {
-                juradoModalCopy.textContent = 'Completá el nombre y el código de acceso. El usuario se genera automáticamente.';
+                juradoModalCopy.textContent = 'Completá el nombre, el código de acceso y, si querés, la imagen de perfil. El usuario se genera automáticamente.';
             }
             if (juradoSubmitButton) juradoSubmitButton.textContent = 'Guardar jurado';
         }
@@ -1323,9 +1494,20 @@ $usuarioSesion = (string) ($_SESSION['usuario'] ?? $_SESSION['correo'] ?? 'Admin
             if (juradoIdInput) juradoIdInput.value = button.dataset.juradoId || '0';
             if (nombreJuradoInput) nombreJuradoInput.value = button.dataset.juradoNombre || '';
             if (codigoJuradoInput) codigoJuradoInput.value = button.dataset.juradoCodigo || '';
+            if (avatarJuradoActualInput) avatarJuradoActualInput.value = button.dataset.juradoAvatar || '';
+            if (avatarPreviewActual) {
+                const avatarRelativo = button.dataset.juradoAvatar || '';
+                if (avatarRelativo !== '') {
+                    avatarPreviewActual.removeAttribute('hidden');
+                    avatarPreviewActual.setAttribute('src', `/${avatarRelativo.replace(/\\/g, '/').replace(/^\/+/, '')}`);
+                } else {
+                    avatarPreviewActual.setAttribute('hidden', 'hidden');
+                    avatarPreviewActual.setAttribute('src', '');
+                }
+            }
             if (juradoModalTitle) juradoModalTitle.textContent = 'Modificar jurado';
             if (juradoModalCopy) {
-                juradoModalCopy.textContent = 'Actualizá el nombre y el código de acceso del jurado seleccionado.';
+                juradoModalCopy.textContent = 'Actualizá el nombre, el código de acceso y, si necesitás, reemplazá la imagen de perfil del jurado seleccionado.';
             }
             if (juradoSubmitButton) juradoSubmitButton.textContent = 'Guardar cambios';
             openJuradoModal();
