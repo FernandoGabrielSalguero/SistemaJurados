@@ -440,6 +440,96 @@ class AdminCalificacionesModel
         return $metricas;
     }
 
+    /**
+     * @return array<int, string>
+     */
+    public function obtenerNombresEventosExistentes(): array
+    {
+        if (!$this->tablaExiste('calificacion_formularios')) {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT DISTINCT evento_nombre
+             FROM calificacion_formularios
+             WHERE TRIM(COALESCE(evento_nombre, '')) <> ''
+             ORDER BY evento_nombre ASC"
+        );
+
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_COLUMN) : [];
+
+        return array_values(
+            array_map(
+                static fn($evento): string => (string) $evento,
+                $rows ?: []
+            )
+        );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function obtenerImagenesPorEvento(): array
+    {
+        if (
+            !$this->tablaExiste('calificacion_formularios')
+            || !$this->columnaExiste('calificacion_formularios', 'imagen_url')
+        ) {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT evento_nombre, imagen_url
+             FROM calificacion_formularios
+             WHERE TRIM(COALESCE(evento_nombre, '')) <> ''
+               AND TRIM(COALESCE(imagen_url, '')) <> ''
+             ORDER BY actualizado_en DESC, id DESC"
+        );
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        $imagenes = [];
+        foreach ($rows ?: [] as $row) {
+            $evento = trim((string) ($row['evento_nombre'] ?? ''));
+            $imagen = trim((string) ($row['imagen_url'] ?? ''));
+            if ($evento === '' || $imagen === '') {
+                continue;
+            }
+
+            $clave = mb_strtolower($evento);
+            if (!isset($imagenes[$clave])) {
+                $imagenes[$clave] = $imagen;
+            }
+        }
+
+        return $imagenes;
+    }
+
+    public function contarFormulariosPorImagen(string $imagenUrl, ?int $ignorarFormularioId = null): int
+    {
+        if (
+            trim($imagenUrl) === ''
+            || !$this->tablaExiste('calificacion_formularios')
+            || !$this->columnaExiste('calificacion_formularios', 'imagen_url')
+        ) {
+            return 0;
+        }
+
+        $sql = "SELECT COUNT(*)
+                FROM calificacion_formularios
+                WHERE imagen_url = :imagen_url";
+        $params = ['imagen_url' => $imagenUrl];
+
+        if (($ignorarFormularioId ?? 0) > 0) {
+            $sql .= " AND id <> :ignorar_id";
+            $params['ignorar_id'] = $ignorarFormularioId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     private function tablaExiste(string $tabla): bool
     {
         try {

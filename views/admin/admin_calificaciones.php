@@ -9,6 +9,8 @@ $criteriosBase = $viewData['criteriosBase'] ?? [];
 $estadoTablas = $viewData['estadoTablas'] ?? ['formularios_listos' => false, 'evaluaciones_listas' => false, 'imagen_columna_lista' => false, 'faltantes' => []];
 $faltantesTablas = $viewData['faltantesTablas'] ?? [];
 $formularios = $viewData['formularios'] ?? [];
+$eventosExistentes = $viewData['eventosExistentes'] ?? [];
+$imagenesEventos = $viewData['imagenesEventos'] ?? [];
 $metricas = $viewData['metricas'] ?? [];
 $mensaje = $viewData['mensaje'] ?? '';
 $mensajeTipo = $viewData['mensajeTipo'] ?? 'success';
@@ -81,6 +83,11 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
         .field-help { color:var(--muted); font-size:.8rem; line-height:1.45; }
         .image-thumb { width:56px; height:56px; border-radius:12px; object-fit:cover; border:1px solid var(--border); background:#f8fafc; display:block; }
         .image-thumb.large { width:96px; height:96px; margin-top:8px; }
+        .event-image-notice { display:none; margin-top:10px; padding:12px 14px; border-radius:14px; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8; align-items:center; gap:12px; }
+        .event-image-notice.open { display:flex; }
+        .event-image-copy { display:flex; flex-direction:column; gap:4px; min-width:0; }
+        .event-image-title { font-weight:800; color:#1e3a8a; }
+        .event-image-text { color:#1d4ed8; font-size:.82rem; line-height:1.45; }
         .checkbox-field { display:inline-flex; align-items:center; gap:10px; margin-top:14px; font-weight:600; color:#334155; }
         .score-summary { margin-top:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-radius:16px; padding:16px 18px; background:#0f172a; color:#fff; }
         .score-summary-label { font-size:.88rem; color:rgba(255,255,255,.72); }
@@ -188,7 +195,16 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
                                 <div class="form-grid">
                                     <div class="form-field full">
                                         <label for="evento_nombre">Nombre del evento</label>
-                                        <input type="text" id="evento_nombre" name="evento_nombre" value="<?= htmlspecialchars((string) ($formData['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Campeonato Nacional 2026" required>
+                                        <input type="text" id="evento_nombre" name="evento_nombre" list="eventosSugeridos" autocomplete="off" value="<?= htmlspecialchars((string) ($formData['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Campeonato Nacional 2026" required>
+                                        <datalist id="eventosSugeridos"></datalist>
+                                        <div class="field-help">Desde el tercer caracter se sugeriran eventos ya creados con nombres similares.</div>
+                                        <div class="event-image-notice" id="eventImageNotice">
+                                            <img class="image-thumb" id="eventImageNoticeThumb" src="" alt="Imagen existente del evento">
+                                            <div class="event-image-copy">
+                                                <div class="event-image-title">Este evento ya tiene imagen</div>
+                                                <div class="event-image-text">Si no subes una imagen nueva, el formulario reutilizara automaticamente la imagen ya asociada a este evento.</div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="form-field">
                                         <label for="categoria">Categoria</label>
@@ -326,6 +342,12 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
         const mobileBreakpoint = window.matchMedia('(max-width: 860px)');
         const scoreInputs = document.querySelectorAll('.criterio-puntaje');
         const scoreSummaryValue = document.getElementById('scoreSummaryValue');
+        const eventoInput = document.getElementById('evento_nombre');
+        const eventosSugeridos = document.getElementById('eventosSugeridos');
+        const eventosExistentes = <?= json_encode(array_values($eventosExistentes), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+        const imagenesEventos = <?= json_encode($imagenesEventos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+        const eventImageNotice = document.getElementById('eventImageNotice');
+        const eventImageNoticeThumb = document.getElementById('eventImageNoticeThumb');
         const deleteConfirmModal = document.getElementById('deleteConfirmModal');
         const deleteConfirmCancel = document.getElementById('deleteConfirmCancel');
         const deleteConfirmAccept = document.getElementById('deleteConfirmAccept');
@@ -344,6 +366,41 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
             }
         }
 
+        function actualizarSugerenciasEvento() {
+            if (!eventoInput || !eventosSugeridos) return;
+
+            const termino = eventoInput.value.trim().toLowerCase();
+            eventosSugeridos.innerHTML = '';
+
+            if (termino.length < 3) return;
+
+            const coincidencias = eventosExistentes
+                .filter((evento) => evento.toLowerCase().includes(termino))
+                .slice(0, 8);
+
+            coincidencias.forEach((evento) => {
+                const option = document.createElement('option');
+                option.value = evento;
+                eventosSugeridos.appendChild(option);
+            });
+        }
+
+        function actualizarAvisoImagenEvento() {
+            if (!eventoInput || !eventImageNotice || !eventImageNoticeThumb) return;
+
+            const evento = eventoInput.value.trim().toLowerCase();
+            const imagenRelativa = evento === '' ? '' : (imagenesEventos[evento] || '');
+
+            if (!imagenRelativa) {
+                eventImageNotice.classList.remove('open');
+                eventImageNoticeThumb.setAttribute('src', '');
+                return;
+            }
+
+            eventImageNoticeThumb.setAttribute('src', `/${imagenRelativa.replace(/\\/g, '/').replace(/^\/+/, '')}`);
+            eventImageNotice.classList.add('open');
+        }
+
         toggleSidebarButton?.addEventListener('click', () => {
             if (mobileBreakpoint.matches) { body.classList.toggle('sidebar-open'); return; }
         });
@@ -356,6 +413,15 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
 
         mobileBreakpoint.addEventListener('change', () => { body.classList.remove('sidebar-open'); });
         scoreInputs.forEach((input) => input.addEventListener('input', updateScoreSummary));
+        eventoInput?.addEventListener('input', () => {
+            actualizarSugerenciasEvento();
+            actualizarAvisoImagenEvento();
+        });
+        eventoInput?.addEventListener('focus', () => {
+            actualizarSugerenciasEvento();
+            actualizarAvisoImagenEvento();
+        });
+        eventoInput?.addEventListener('change', actualizarAvisoImagenEvento);
 
         function closeDeleteModal() {
             deleteTargetForm = null;
@@ -407,6 +473,7 @@ $formularioEditandoId = (int) ($viewData['formularioEditandoId'] ?? 0);
         }
 
         updateScoreSummary();
+        actualizarAvisoImagenEvento();
         lockFrameworkTheme();
         window.addEventListener('load', lockFrameworkTheme);
     </script>

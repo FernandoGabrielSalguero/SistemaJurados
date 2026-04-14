@@ -67,8 +67,23 @@ function adminCalificacionesRutaAbsolutaDesdeRelativa(?string $rutaRelativa): st
     return dirname(__DIR__) . '/' . ltrim(str_replace('\\', '/', $rutaRelativa), '/');
 }
 
+function adminCalificacionesBuscarImagenEvento(array $imagenesPorEvento, string $eventoNombre): string
+{
+    $eventoNombre = trim($eventoNombre);
+    if ($eventoNombre === '') {
+        return '';
+    }
+
+    $clave = mb_strtolower($eventoNombre);
+
+    return (string) ($imagenesPorEvento[$clave] ?? '');
+}
+
 $modoEdicion = false;
 $formularioEditandoId = 0;
+$imagenesEventos = (bool) ($estadoTablas['imagen_columna_lista'] ?? false)
+    ? $model->obtenerImagenesPorEvento()
+    : [];
 
 if (isset($_GET['editar'])) {
     $formularioEditandoId = (int) ($_GET['editar'] ?? 0);
@@ -146,6 +161,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $imagenDestinoAbsoluto = '';
                 $imagenAnteriorRelativa = $formData['imagen_url'];
                 $eliminarImagenActual = isset($_POST['eliminar_imagen_actual']);
+                $imagenEventoExistente = adminCalificacionesBuscarImagenEvento($imagenesEventos, $formData['evento_nombre']);
+                $imagenEventoReutilizada = false;
 
                 if ($modoEdicion && $formularioEditandoId <= 0) {
                     $mensaje = 'No se encontro el formulario a editar.';
@@ -198,6 +215,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 } elseif ($eliminarImagenActual && (bool) ($estadoTablas['imagen_columna_lista'] ?? false)) {
                     $formData['imagen_url'] = '';
+                } elseif (
+                    (bool) ($estadoTablas['imagen_columna_lista'] ?? false)
+                    && $imagenEventoExistente !== ''
+                    && $formData['imagen_url'] === ''
+                ) {
+                    $formData['imagen_url'] = $imagenEventoExistente;
+                    $imagenEventoReutilizada = true;
                 }
 
                 try {
@@ -232,13 +256,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if ($imagenAnteriorRelativa !== '' && $imagenAnteriorRelativa !== $formData['imagen_url']) {
                         $imagenAnteriorAbsoluta = adminCalificacionesRutaAbsolutaDesdeRelativa($imagenAnteriorRelativa);
-                        if ($imagenAnteriorAbsoluta !== '' && is_file($imagenAnteriorAbsoluta)) {
+                        if (
+                            $imagenAnteriorAbsoluta !== ''
+                            && is_file($imagenAnteriorAbsoluta)
+                            && $model->contarFormulariosPorImagen($imagenAnteriorRelativa, $modoEdicion ? $formularioEditandoId : null) === 0
+                        ) {
                             @unlink($imagenAnteriorAbsoluta);
                         }
                     }
 
                     $_SESSION['admin_calificaciones_flash'] = [
-                        'mensaje' => $modoEdicion ? 'Formulario actualizado correctamente.' : 'Formulario creado correctamente.',
+                        'mensaje' => $modoEdicion
+                            ? ($imagenEventoReutilizada ? 'Formulario actualizado correctamente. Se reutilizo la imagen existente del evento.' : 'Formulario actualizado correctamente.')
+                            : ($imagenEventoReutilizada ? 'Formulario creado correctamente. Se reutilizo la imagen existente del evento.' : 'Formulario creado correctamente.'),
                         'tipo' => 'success',
                     ];
                     adminCalificacionesRedirect();
@@ -300,7 +330,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resultado = $model->eliminarFormularioEnCascada($formularioId);
             if ((bool) ($resultado['eliminado'] ?? false)) {
                 $imagenAbsoluta = adminCalificacionesRutaAbsolutaDesdeRelativa((string) ($resultado['imagen_url'] ?? ''));
-                if ($imagenAbsoluta !== '' && is_file($imagenAbsoluta)) {
+                if (
+                    $imagenAbsoluta !== ''
+                    && is_file($imagenAbsoluta)
+                    && $model->contarFormulariosPorImagen((string) ($resultado['imagen_url'] ?? ''), null) === 0
+                ) {
                     @unlink($imagenAbsoluta);
                 }
             }
@@ -323,6 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $formularios = $estadoTablas['formularios_listos'] ? $model->obtenerFormulariosConCriterios() : [];
+$eventosExistentes = $estadoTablas['formularios_listos'] ? $model->obtenerNombresEventosExistentes() : [];
 $metricas = $model->obtenerMetricasResumen($formularios);
 $faltantes = $estadoTablas['faltantes'];
 
@@ -335,6 +370,8 @@ $viewData = [
     'estadoTablas' => $estadoTablas,
     'faltantesTablas' => $faltantes,
     'formularios' => $formularios,
+    'eventosExistentes' => $eventosExistentes,
+    'imagenesEventos' => $imagenesEventos,
     'metricas' => $metricas,
     'mensaje' => $mensaje,
     'mensajeTipo' => $mensajeTipo,
