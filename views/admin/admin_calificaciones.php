@@ -165,8 +165,8 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                         <input type="text" id="evento_nombre" name="evento_nombre" value="<?= htmlspecialchars((string) ($formData['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Campeonato Nacional 2026" required>
                                     </div>
                                     <div class="form-field">
-                                        <label for="subcategoria">Estilo</label>
-                                        <input type="text" id="subcategoria" name="subcategoria" value="<?= htmlspecialchars((string) ($formData['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Malambo escenico" required>
+                                        <label for="estilo">Estilo</label>
+                                        <input type="text" id="estilo" name="subcategoria" value="<?= htmlspecialchars((string) ($formData['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Malambo escenico" required>
                                     </div>
                                     <div class="form-field">
                                         <label for="categoria">Categoria</label>
