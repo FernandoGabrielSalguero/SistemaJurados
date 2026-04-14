@@ -66,6 +66,7 @@ class AdminCalificacionesModel
                 && !in_array('calificacion_formulario_criterios', $faltantes, true),
             'evaluaciones_listas' => !in_array('calificacion_evaluaciones', $faltantes, true)
                 && !in_array('calificacion_evaluacion_detalles', $faltantes, true),
+            'imagen_columna_lista' => $this->columnaExiste('calificacion_formularios', 'imagen_url'),
             'faltantes' => $faltantes,
         ];
     }
@@ -78,20 +79,38 @@ class AdminCalificacionesModel
         $this->db->beginTransaction();
 
         try {
-            $stmtFormulario = $this->db->prepare(
-                "INSERT INTO calificacion_formularios
-                    (subcategoria, categoria, evento_nombre, activo, creado_por)
-                 VALUES
-                    (:subcategoria, :categoria, :evento_nombre, :activo, :creado_por)"
-            );
+            if ($this->columnaExiste('calificacion_formularios', 'imagen_url')) {
+                $stmtFormulario = $this->db->prepare(
+                    "INSERT INTO calificacion_formularios
+                        (subcategoria, categoria, evento_nombre, imagen_url, activo, creado_por)
+                     VALUES
+                        (:subcategoria, :categoria, :evento_nombre, :imagen_url, :activo, :creado_por)"
+                );
 
-            $stmtFormulario->execute([
-                'subcategoria' => $data['subcategoria'],
-                'categoria' => $data['categoria'],
-                'evento_nombre' => $data['evento_nombre'],
-                'activo' => (int) ($data['activo'] ?? 0),
-                'creado_por' => (int) $data['creado_por'],
-            ]);
+                $stmtFormulario->execute([
+                    'subcategoria' => $data['subcategoria'],
+                    'categoria' => $data['categoria'],
+                    'evento_nombre' => $data['evento_nombre'],
+                    'imagen_url' => $data['imagen_url'] ?? null,
+                    'activo' => (int) ($data['activo'] ?? 0),
+                    'creado_por' => (int) $data['creado_por'],
+                ]);
+            } else {
+                $stmtFormulario = $this->db->prepare(
+                    "INSERT INTO calificacion_formularios
+                        (subcategoria, categoria, evento_nombre, activo, creado_por)
+                     VALUES
+                        (:subcategoria, :categoria, :evento_nombre, :activo, :creado_por)"
+                );
+
+                $stmtFormulario->execute([
+                    'subcategoria' => $data['subcategoria'],
+                    'categoria' => $data['categoria'],
+                    'evento_nombre' => $data['evento_nombre'],
+                    'activo' => (int) ($data['activo'] ?? 0),
+                    'creado_por' => (int) $data['creado_por'],
+                ]);
+            }
 
             $formularioId = (int) $this->db->lastInsertId();
 
@@ -143,11 +162,13 @@ class AdminCalificacionesModel
     public function obtenerFormulariosConCriterios(): array
     {
         $tieneEvaluaciones = $this->tablaExiste('calificacion_evaluaciones');
+        $tieneImagenUrl = $this->columnaExiste('calificacion_formularios', 'imagen_url');
 
         $sql = "SELECT f.id,
                        f.subcategoria,
                        f.categoria,
                        f.evento_nombre,
+                       " . ($tieneImagenUrl ? "f.imagen_url" : "NULL AS imagen_url") . ",
                        f.activo,
                        f.creado_por,
                        f.creado_en,
@@ -171,7 +192,7 @@ class AdminCalificacionesModel
         }
 
         $sql .= "
-                GROUP BY f.id, f.subcategoria, f.categoria, f.evento_nombre, f.activo, f.creado_por, f.creado_en, a.usuario
+                GROUP BY f.id, f.subcategoria, f.categoria, f.evento_nombre, " . ($tieneImagenUrl ? "f.imagen_url, " : "") . "f.activo, f.creado_por, f.creado_en, a.usuario
                 ORDER BY f.activo DESC, f.creado_en DESC, f.id DESC";
 
         $stmt = $this->db->query($sql);
@@ -242,6 +263,27 @@ class AdminCalificacionesModel
             $stmt = $this->db->prepare("SHOW TABLES LIKE :tabla");
             $stmt->execute(['tabla' => $tabla]);
             return (bool) $stmt->fetch(PDO::FETCH_NUM);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function columnaExiste(string $tabla, string $columna): bool
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*)
+                 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = :tabla
+                   AND COLUMN_NAME = :columna"
+            );
+            $stmt->execute([
+                'tabla' => $tabla,
+                'columna' => $columna,
+            ]);
+
+            return (int) $stmt->fetchColumn() > 0;
         } catch (Throwable $e) {
             return false;
         }

@@ -6,7 +6,7 @@ $usuarioSesion = $viewData['usuarioSesion'] ?? 'Administrador';
 $pageTitle = $viewData['pageTitle'] ?? 'Calificaciones';
 $pageSubtitle = $viewData['pageSubtitle'] ?? '';
 $criteriosBase = $viewData['criteriosBase'] ?? [];
-$estadoTablas = $viewData['estadoTablas'] ?? ['formularios_listos' => false, 'evaluaciones_listas' => false, 'faltantes' => []];
+$estadoTablas = $viewData['estadoTablas'] ?? ['formularios_listos' => false, 'evaluaciones_listas' => false, 'imagen_columna_lista' => false, 'faltantes' => []];
 $faltantesTablas = $viewData['faltantesTablas'] ?? [];
 $formularios = $viewData['formularios'] ?? [];
 $metricas = $viewData['metricas'] ?? [];
@@ -15,7 +15,7 @@ $mensajeTipo = $viewData['mensajeTipo'] ?? 'success';
 $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', 'evento_nombre' => '', 'activo' => 1, 'puntajes' => []];
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es"> 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -73,8 +73,11 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
         .form-field.full { grid-column:1 / -1; }
         .form-field label { font-size:.84rem; font-weight:700; color:#334155; }
         .form-field input[type="text"], .form-field input[type="number"] { width:100%; min-height:44px; border-radius:14px; border:1px solid #d6dfef; padding:10px 14px; background:#fff; color:#111827; font-size:.95rem; }
+        .form-field input[type="file"] { width:100%; min-height:44px; border-radius:14px; border:1px dashed #bfd0ee; padding:10px 14px; background:#f8fbff; color:#111827; font-size:.92rem; }
         .criterio-item-title { font-weight:800; margin-bottom:4px; }
         .criterio-item-hint { color:var(--muted); font-size:.8rem; margin-bottom:10px; }
+        .field-help { color:var(--muted); font-size:.8rem; line-height:1.45; }
+        .image-thumb { width:56px; height:56px; border-radius:12px; object-fit:cover; border:1px solid var(--border); background:#f8fafc; display:block; }
         .checkbox-field { display:inline-flex; align-items:center; gap:10px; margin-top:14px; font-weight:600; color:#334155; }
         .score-summary { margin-top:18px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-radius:16px; padding:16px 18px; background:#0f172a; color:#fff; }
         .score-summary-label { font-size:.88rem; color:rgba(255,255,255,.72); }
@@ -145,6 +148,7 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                         <p><?= htmlspecialchars($pageSubtitle, ENT_QUOTES, 'UTF-8') ?></p>
                         <?php if ($mensaje !== ''): ?><div class="alert-inline <?= htmlspecialchars($mensajeTipo, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
                         <?php if ($faltantesTablas): ?><div class="alert-inline warning">Todavia faltan tablas del modulo: <strong><?= htmlspecialchars(implode(', ', $faltantesTablas), ENT_QUOTES, 'UTF-8') ?></strong>. El SQL sugerido ya quedo documentado en <code>assets/estructura_base_datos.md</code>.</div><?php endif; ?>
+                        <?php if (($estadoTablas['formularios_listos'] ?? false) && !($estadoTablas['imagen_columna_lista'] ?? false)): ?><div class="alert-inline warning">Para guardar imagenes en cada formulario falta agregar la columna <code>imagen_url</code> en <code>calificacion_formularios</code>.</div><?php endif; ?>
                     </section>
 
                     <section class="metrics-grid">
@@ -157,8 +161,9 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                     <section class="panel-card form-section">
                             <h2 class="section-title">Crear formulario de calificacion</h2>
                             <p class="section-caption">El administrador define el estilo, la categoria, el evento y el puntaje maximo de cada criterio del formulario. La suma total siempre debe ser 100.</p>
-                            <form method="post" id="formularioCalificacion">
+                            <form method="post" id="formularioCalificacion" enctype="multipart/form-data">
                                 <input type="hidden" name="guardar_formulario" value="1">
+                                <input type="hidden" name="imagen_url_actual" value="<?= htmlspecialchars((string) ($formData['imagen_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                 <div class="form-grid">
                                     <div class="form-field full">
                                         <label for="evento_nombre">Nombre del evento</label>
@@ -171,6 +176,11 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                     <div class="form-field">
                                         <label for="categoria">Categoria</label>
                                         <input type="text" id="categoria" name="categoria" value="<?= htmlspecialchars((string) ($formData['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ej. Adultos parejas" required>
+                                    </div>
+                                    <div class="form-field full">
+                                        <label for="imagen_evento">Imagen del formulario</label>
+                                        <input type="file" id="imagen_evento" name="imagen_evento" accept=".jpg,.jpeg,.png,.webp,.gif,image/*">
+                                        <div class="field-help">Sube una imagen en JPG, PNG, WEBP o GIF. Se guardara en <code>uploads/events</code> y se almacenara su ruta para usarla despues.</div>
                                     </div>
                                 </div>
                                 <div class="criterios-grid">
@@ -202,7 +212,7 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                             <div class="table-responsive">
                                 <table class="table">
                                     <thead>
-                                        <tr><th>ID</th><th>Estilo</th><th>Evento</th><th>Categoria</th><th>Criterios</th><th>Total</th><th>Evaluaciones</th><th>Estado</th><th>Accion</th></tr>
+                                        <tr><th>ID</th><th>Estilo</th><th>Evento</th><th>Categoria</th><th>Imagen</th><th>Criterios</th><th>Total</th><th>Evaluaciones</th><th>Estado</th><th>Accion</th></tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($formularios as $formulario): ?>
@@ -211,6 +221,14 @@ $formData = $viewData['formData'] ?? ['subcategoria' => '', 'categoria' => '', '
                                                 <td><strong><?= htmlspecialchars((string) ($formulario['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><br><span class="section-caption">Creado por <?= htmlspecialchars((string) ($formulario['creador_usuario'] ?? 'Administrador'), ENT_QUOTES, 'UTF-8') ?></span></td>
                                                 <td><?= htmlspecialchars((string) ($formulario['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                                 <td><?= htmlspecialchars((string) ($formulario['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                <td>
+                                                    <?php if (!empty($formulario['imagen_url'])): ?>
+                                                        <?php $imagenUrl = '/' . ltrim(str_replace('\\', '/', (string) $formulario['imagen_url']), '/'); ?>
+                                                        <img class="image-thumb" src="<?= htmlspecialchars($imagenUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Imagen del evento">
+                                                    <?php else: ?>
+                                                        <span class="section-caption">Sin imagen</span>
+                                                    <?php endif; ?>
+                                                </td>
                                                 <td><div class="criterios-listado"><?php foreach (($formulario['criterios'] ?? []) as $criterio): ?><span class="criterio-chip"><?= htmlspecialchars((string) ($criterio['criterio_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <?= (int) ($criterio['puntaje_maximo'] ?? 0) ?></span><?php endforeach; ?></div></td>
                                                 <td><strong><?= (int) ($formulario['puntaje_total'] ?? 0) ?></strong> pts</td>
                                                 <td><?= (int) ($formulario['total_evaluaciones'] ?? 0) ?></td>
