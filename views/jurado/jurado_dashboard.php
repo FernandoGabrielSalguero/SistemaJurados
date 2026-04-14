@@ -180,11 +180,12 @@ $eventoInitials = juradoDashboardInitials($eventoNombre !== '' ? $eventoNombre :
         .tentative-rank.rank-third { background:#ffedd5; color:#c2410c; }
         .tentative-rank.rank-second { background:#fef3c7; color:#b45309; }
         .tentative-rank.rank-first { background:#dcfce7; color:#15803d; }
-        .summary-aside { position:sticky; top:92px; display:flex; flex-direction:column; align-self:stretch; height:100%; }
-        .summary-avatars { display:flex; align-items:center; gap:12px; margin:0 0 18px; }
-        .summary-avatar { width:58px; height:58px; border-radius:50%; border:2px solid rgba(228,168,0,.24); background:linear-gradient(135deg,#fff6cf,#ffe083); color:#6f4e00; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; box-shadow:0 10px 24px rgba(15,23,42,.12); font-size:1rem; font-weight:800; letter-spacing:.04em; flex:0 0 auto; }
+        .summary-aside { position:sticky; top:92px; display:flex; flex-direction:column; align-self:stretch; height:100%; min-height:100%; }
+        .summary-top { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+        .summary-avatars { flex:1 1 auto; min-height:clamp(150px,24vw,320px); display:flex; align-items:flex-start; justify-content:center; gap:clamp(18px,3vw,34px); margin:0 0 18px; padding:clamp(8px,1.8vw,18px) 0 clamp(14px,2.2vw,28px); }
+        .summary-avatar { width:clamp(86px,10vw,156px); aspect-ratio:1 / 1; border-radius:50%; border:3px solid rgba(228,168,0,.24); background:linear-gradient(135deg,#fff6cf,#ffe083); color:#6f4e00; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; box-shadow:0 14px 34px rgba(15,23,42,.18); font-size:clamp(1.15rem,2.1vw,1.8rem); font-weight:800; letter-spacing:.04em; flex:0 0 auto; }
         .summary-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
-        .summary-avatar.event-avatar { margin-left:-18px; border-color:rgba(15,23,42,.12); background:linear-gradient(135deg,#eef2ff,#dbeafe); color:#1e3a8a; }
+        .summary-avatar.event-avatar { border-color:rgba(15,23,42,.12); background:linear-gradient(135deg,#eef2ff,#dbeafe); color:#1e3a8a; align-self:flex-end; transform:translateY(clamp(8px,1.6vw,18px)); }
         .resume-list { display:flex; flex-direction:column; gap:14px; }
         .resume-item { padding-bottom:12px; border-bottom:1px solid var(--border); }
         .resume-item:last-child { padding-bottom:0; border-bottom:0; }
@@ -192,7 +193,8 @@ $eventoInitials = juradoDashboardInitials($eventoNombre !== '' ? $eventoNombre :
         .resume-item-value { color:var(--text); font-size:.98rem; font-weight:800; word-break:break-word; }
         .summary-aside .score-summary { margin-top:18px; }
         .summary-aside .score-blocks { width:100%; justify-content:flex-start; }
-        .form-actions { display:flex; justify-content:stretch; margin-top:auto; padding-top:18px; }
+        .summary-footer { margin-top:auto; display:flex; flex-direction:column; gap:18px; }
+        .form-actions { display:flex; justify-content:stretch; margin-top:0; padding-top:0; }
         .btn-primary { border:0; border-radius:var(--control-radius); background:linear-gradient(135deg,var(--primary),var(--primary-strong)); color:var(--primary-text); padding:12px 18px; font-weight:800; cursor:pointer; transition:border-radius .25s ease,background .25s ease,color .25s ease; }
         .empty-state { min-height:260px; display:flex; align-items:center; justify-content:center; text-align:center; border:1px dashed var(--border); border-radius:18px; background:linear-gradient(180deg,color-mix(in srgb, var(--surface) 88%, #fff7d6 12%) 0%,color-mix(in srgb, var(--surface) 92%, #fffbef 8%) 100%); padding:32px 20px; }
         .empty-state-box { max-width:480px; }
@@ -226,9 +228,9 @@ $eventoInitials = juradoDashboardInitials($eventoNombre !== '' ? $eventoNombre :
         .style-presets { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
         .style-preset-btn { border:1px solid var(--border); border-radius:16px; padding:10px; background:var(--surface); cursor:pointer; color:var(--text); text-align:left; }
         .style-preset-swatch { height:10px; border-radius:999px; margin-bottom:8px; }
-        @media (max-width:1180px) { .form-layout { grid-template-columns:1fr; } .summary-aside { position:static; } .top-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid,.confirm-grid,.style-grid,.style-presets,.score-summary { grid-template-columns:1fr; } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } .dashboard-style-drawer { width:min(100vw,430px); } }
-        @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .logout-link span:last-child { display:none; } .score-summary-value { font-size:1.6rem; } .score-blocks { gap:16px; } .dashboard-style-btn { right:14px; bottom:14px; width:54px; height:54px; border-radius:16px; } .style-drawer-header,.style-drawer-body { padding-left:16px; padding-right:16px; } }
+        @media (max-width:1180px) { .form-layout { grid-template-columns:1fr; } .summary-aside { position:static; min-height:auto; } .summary-top { flex:0 0 auto; } .summary-avatars { min-height:190px; } .top-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .questions-card .criteria-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media (max-width:860px) { .navbar { flex-wrap:wrap; padding:12px 16px; } .navbar-actions { width:100%; justify-content:space-between; } .content { padding:16px; } .panel-card { padding:18px; border-radius:18px; } .top-grid,.form-grid,.criteria-grid,.questions-card .criteria-grid,.confirm-grid,.style-grid,.style-presets,.score-summary { grid-template-columns:1fr; } .summary-avatars { min-height:150px; gap:18px; } .summary-avatar { width:clamp(84px,22vw,128px); } .score-blocks { width:100%; justify-content:space-between; } .btn-primary { width:100%; } .navbar-subtitle { display:none; } .navbar-user { font-size:1.08rem; } .dashboard-style-drawer { width:min(100vw,430px); } }
+        @media (max-width:560px) { html { font-size:13px; } .content { padding:12px; } .panel-card { padding:16px; border-radius:16px; } .summary-avatars { min-height:128px; justify-content:flex-start; } .summary-avatar { width:clamp(78px,24vw,104px); } .summary-avatar.event-avatar { transform:translateY(10px); } .logout-link span:last-child { display:none; } .score-summary-value { font-size:1.6rem; } .score-blocks { gap:16px; } .dashboard-style-btn { right:14px; bottom:14px; width:54px; height:54px; border-radius:16px; } .style-drawer-header,.style-drawer-body { padding-left:16px; padding-right:16px; } }
     </style>
 </head>
 <body>
@@ -327,65 +329,69 @@ $eventoInitials = juradoDashboardInitials($eventoNombre !== '' ? $eventoNombre :
                                 </div>
 
                                 <aside class="panel-card summary-aside">
-                                    <div class="summary-avatars" aria-hidden="true">
-                                        <div class="summary-avatar" title="Jurado">
-                                            <?php if ($juradoAvatarUrl !== ''): ?>
-                                                <img src="<?= htmlspecialchars($juradoAvatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Foto del jurado <?= htmlspecialchars($juradoNombre, ENT_QUOTES, 'UTF-8') ?>">
-                                            <?php else: ?>
-                                                <span><?= htmlspecialchars($juradoInitials, ENT_QUOTES, 'UTF-8') ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="summary-avatar event-avatar" title="Evento">
-                                            <?php if ($eventoImagenUrl !== ''): ?>
-                                                <img src="<?= htmlspecialchars($eventoImagenUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Imagen del evento <?= htmlspecialchars($eventoNombre, ENT_QUOTES, 'UTF-8') ?>">
-                                            <?php else: ?>
-                                                <span><?= htmlspecialchars($eventoInitials, ENT_QUOTES, 'UTF-8') ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                    <h3 class="section-title">Resumen</h3>
-                                    <p class="section-caption">Vista previa de la calificacion que estas cargando.</p>
-
-                                    <div class="resume-list">
-                                        <div class="resume-item">
-                                            <div class="resume-item-label">Subcategoria</div>
-                                            <div class="resume-item-value" id="resumenFormulario"><?= htmlspecialchars((string) ($formularioSeleccionado['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                        </div>
-                                        <div class="resume-item">
-                                            <div class="resume-item-label">Jurado</div>
-                                            <div class="resume-item-value"><?= htmlspecialchars($usuarioSesion, ENT_QUOTES, 'UTF-8') ?></div>
-                                        </div>
-                                        <div class="resume-item">
-                                            <div class="resume-item-label">Competencia</div>
-                                            <div class="resume-item-value"><?= htmlspecialchars((string) ($formularioSeleccionado['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                        </div>
-                                        <div class="resume-item">
-                                            <div class="resume-item-label">Categoria</div>
-                                            <div class="resume-item-value" id="resumenCategoria"><?= htmlspecialchars((string) ($formularioSeleccionado['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                        </div>
-                                        <div class="resume-item">
-                                            <div class="resume-item-label">N° del competidor</div>
-                                            <div class="resume-item-value" id="resumenCompetidorNumero"><?= htmlspecialchars((string) ($formData['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?: 'Sin completar' ?></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="score-summary">
-                                        <div class="score-summary-column">
-                                            <div class="score-summary-label">Resultado de la calificacion</div>
-                                            <div class="score-blocks">
-                                                <div>
-                                                    <div class="score-summary-value" id="puntajeTotal">0</div>
-                                                </div>
+                                    <div class="summary-top">
+                                        <div class="summary-avatars" aria-hidden="true">
+                                            <div class="summary-avatar" title="Jurado">
+                                                <?php if ($juradoAvatarUrl !== ''): ?>
+                                                    <img src="<?= htmlspecialchars($juradoAvatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Foto del jurado <?= htmlspecialchars($juradoNombre, ENT_QUOTES, 'UTF-8') ?>">
+                                                <?php else: ?>
+                                                    <span><?= htmlspecialchars($juradoInitials, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="summary-avatar event-avatar" title="Evento">
+                                                <?php if ($eventoImagenUrl !== ''): ?>
+                                                    <img src="<?= htmlspecialchars($eventoImagenUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Imagen del evento <?= htmlspecialchars($eventoNombre, ENT_QUOTES, 'UTF-8') ?>">
+                                                <?php else: ?>
+                                                    <span><?= htmlspecialchars($eventoInitials, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
-                                        <div class="score-summary-column">
-                                            <div class="score-summary-label">Puesto tentativo</div>
-                                            <div class="tentative-rank rank-empty" id="puestoTentativo">Sin definir</div>
+                                        <h3 class="section-title">Resumen</h3>
+                                        <p class="section-caption">Vista previa de la calificacion que estas cargando.</p>
+
+                                        <div class="resume-list">
+                                            <div class="resume-item">
+                                                <div class="resume-item-label">Subcategoria</div>
+                                                <div class="resume-item-value" id="resumenFormulario"><?= htmlspecialchars((string) ($formularioSeleccionado['subcategoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                            </div>
+                                            <div class="resume-item">
+                                                <div class="resume-item-label">Jurado</div>
+                                                <div class="resume-item-value"><?= htmlspecialchars($usuarioSesion, ENT_QUOTES, 'UTF-8') ?></div>
+                                            </div>
+                                            <div class="resume-item">
+                                                <div class="resume-item-label">Competencia</div>
+                                                <div class="resume-item-value"><?= htmlspecialchars((string) ($formularioSeleccionado['evento_nombre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                            </div>
+                                            <div class="resume-item">
+                                                <div class="resume-item-label">Categoria</div>
+                                                <div class="resume-item-value" id="resumenCategoria"><?= htmlspecialchars((string) ($formularioSeleccionado['categoria'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                            </div>
+                                            <div class="resume-item">
+                                                <div class="resume-item-label">N° del competidor</div>
+                                                <div class="resume-item-value" id="resumenCompetidorNumero"><?= htmlspecialchars((string) ($formData['competidor_numero'] ?? ''), ENT_QUOTES, 'UTF-8') ?: 'Sin completar' ?></div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="form-actions">
-                                        <button type="submit" class="btn-primary" id="guardarCalificacionBtn">Guardar calificacion</button>
+                                    <div class="summary-footer">
+                                        <div class="score-summary">
+                                            <div class="score-summary-column">
+                                                <div class="score-summary-label">Resultado de la calificacion</div>
+                                                <div class="score-blocks">
+                                                    <div>
+                                                        <div class="score-summary-value" id="puntajeTotal">0</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="score-summary-column">
+                                                <div class="score-summary-label">Puesto tentativo</div>
+                                                <div class="tentative-rank rank-empty" id="puestoTentativo">Sin definir</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn-primary" id="guardarCalificacionBtn">Guardar calificacion</button>
+                                        </div>
                                     </div>
                                 </aside>
                             </div>
