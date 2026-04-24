@@ -719,13 +719,14 @@ $eventoInitials = juradoDashboardInitials($eventoNombre !== '' ? $eventoNombre :
         }
 
         function getTentativeRank(total) {
-            if (total >= 95) {
+            // Rangos manuales del puesto tentativo del jurado: modifica estos valores si luego necesitas cambiar los puestos.
+            if (total >= 90) {
                 return { label: 'Primer Lugar', className: 'rank-first' };
             }
-            if (total >= 85) {
+            if (total >= 80 && total <= 89) {
                 return { label: 'Segundo Lugar', className: 'rank-second' };
             }
-            if (total >= 74) {
+            if (total >= 65 && total <= 79) {
                 return { label: 'Tercer Lugar', className: 'rank-third' };
             }
             return { label: 'Sin definir', className: 'rank-empty' };
