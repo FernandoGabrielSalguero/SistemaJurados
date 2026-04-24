@@ -723,10 +723,10 @@ $eventoInitials = juradoDashboardInitials($eventoNombre !== '' ? $eventoNombre :
             if (total >= 90) {
                 return { label: 'Primer Lugar', className: 'rank-first' };
             }
-            if (total >= 79 && total <= 90) {
+            if (total >= 80 && total <= 90) {
                 return { label: 'Segundo Lugar', className: 'rank-second' };
             }
-            if (total >= 65 && total <= 79) {
+            if (total >= 65 && total <= 80) {
                 return { label: 'Tercer Lugar', className: 'rank-third' };
             }
             return { label: 'Sin definir', className: 'rank-empty' };
